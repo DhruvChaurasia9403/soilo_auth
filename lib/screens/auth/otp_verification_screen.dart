@@ -1,0 +1,145 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/auth/signup_controller.dart';
+import '../home/home_screen.dart'; // Navigate to home on success
+
+class OtpVerificationScreen extends ConsumerStatefulWidget {
+  final String verificationId;
+  final String phoneNumber; // Optional, for display
+
+  const OtpVerificationScreen({
+    super.key,
+    required this.verificationId,
+    required this.phoneNumber,
+  });
+
+  @override
+  ConsumerState<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
+}
+
+class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
+  final TextEditingController _otpController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  Widget build(BuildContext context) {
+    // Listen for state changes in the SignUpController
+    ref.listen<AsyncValue<String?>>(
+      signUpControllerProvider,
+          (_, state) {
+        if (state.hasError && !state.isLoading) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.error.toString())),
+          );
+        }
+        if (state.hasValue && state.value == null) {
+          // If state.value is null, it means OTP verification was successful
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Phone number verified!')),
+          );
+          // Navigate to home screen and remove all previous routes
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+                (Route<dynamic> route) => false,
+          );
+        }
+      },
+    );
+
+    final signUpState = ref.watch(signUpControllerProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Verify Phone'),
+        backgroundColor: Colors.green.shade800,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Verify Phone Number',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Enter the 6-digit code sent to ${widget.phoneNumber}',
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              TextFormField(
+                controller: _otpController,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 24, letterSpacing: 10),
+                decoration: const InputDecoration(
+                  labelText: 'OTP Code',
+                  border: OutlineInputBorder(),
+                  counterText: "", // Hide the default counter
+                ),
+                validator: (value) {
+                  if (value == null || value.length != 6) {
+                    return 'Please enter a 6-digit OTP.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: signUpState.isLoading
+                    ? null
+                    : () {
+                  if (_formKey.currentState!.validate()) {
+                    ref
+                        .read(signUpControllerProvider.notifier)
+                        .completeSignUpWithOtp(
+                      widget.verificationId,
+                      _otpController.text.trim(),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade700,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: signUpState.isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                  'VERIFY',
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Optionally add a resend OTP button here
+              TextButton(
+                onPressed: signUpState.isLoading
+                    ? null
+                    : () {
+                  // Implement resend OTP logic (calling verifyPhoneNumber again)
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Resending OTP...')),
+                  );
+                  // For a real app, you'd re-initiate phone verification
+                  // For now, it's a placeholder.
+                },
+                child: const Text('Resend Code'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
