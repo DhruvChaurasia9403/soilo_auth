@@ -26,7 +26,7 @@ class SignUpController extends AsyncNotifier<String?> {
       // Firebase needs a user to be associated with a phone number for direct sign-in with phone.
       // Alternatively, you could skip this step and just verify phone, then create custom user.
       // For simplicity here, we create email/password user first.
-      final userCredential = await authRepository.signUpWithEmailPassword(email, password);
+      // final userCredential = await authRepository.signUpWithEmailPassword(email, password);
 
       // IMPORTANT: Firebase will send OTP to the phone number.
       // If the email/password user is created *first*, you might want to link the phone

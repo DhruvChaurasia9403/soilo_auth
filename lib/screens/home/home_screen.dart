@@ -13,7 +13,8 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Soilo Home'),
-        backgroundColor: Colors.green.shade800,
+        // REMOVED: backgroundColor: Colors.green.shade800,
+        // This is now handled by AppBarTheme
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -32,9 +33,10 @@ class HomeScreen extends ConsumerWidget {
               return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
+                  Text(
                     'Welcome to Soilo!',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    // UPDATED: Using the semantic style from TextTheme
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 16),
                   Text('Logged in as: ${user.email ?? user.phoneNumber ?? 'User'}'),
@@ -42,8 +44,10 @@ class HomeScreen extends ConsumerWidget {
                 ],
               );
             }
-            return const Text('Not logged in.'); // Should not happen if correctly routed
+            // Should not happen if correctly routed
+            return const Text('Not logged in.');
           },
+          // This will automatically use your ProgressIndicatorThemeData
           loading: () => const CircularProgressIndicator(),
           error: (error, stack) => Text('Error: $error'),
         ),

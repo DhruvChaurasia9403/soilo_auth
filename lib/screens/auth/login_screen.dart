@@ -4,6 +4,7 @@ import '../../features/auth/auth_repository.dart';
 import 'forgot_password_screen.dart';
 import 'signup_screen.dart';
 import '../../features/auth/auth_controller.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -14,7 +15,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController(); // Changed to Email
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   @override
@@ -26,7 +27,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loginLoadingState = ref.watch(authControllerProvider); // Watch for general auth loading state
+    final loginLoadingState = ref.watch(authControllerProvider);
 
     ref.listen<AsyncValue<void>>(
       authControllerProvider,
@@ -36,15 +37,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             SnackBar(content: Text(state.error.toString())),
           );
         }
-        // If hasValue (e.g., signOut was successful) or userProvider changes (handled in main.dart)
-        // navigation is implicitly handled by main.dart's Consumer
       },
     );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Login'),
-        backgroundColor: Colors.green.shade800,
+        // REMOVED: backgroundColor: Colors.green.shade800,
+        // This is now handled by your AppBarTheme
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -55,21 +55,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             children: [
               Text(
                 'Welcome Back!',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green.shade800,
-                ),
+                // UPDATED: Using the semantic style from TextTheme
+                style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              // Use Email Address for Login
+              // Email Address
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
                   labelText: 'Email Address',
                   prefixIcon: Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(),
+                  // REMOVED: border: OutlineInputBorder(),
+                  // This is now handled by your InputDecorationTheme
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty || !value.contains('@')) {
@@ -86,7 +85,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Password',
                   prefixIcon: Icon(Icons.lock_outline),
-                  border: OutlineInputBorder(),
+                  // REMOVED: border: OutlineInputBorder(),
+                  // This is now handled by your InputDecorationTheme
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -100,13 +100,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                          builder: (context) => const ForgotPasswordScreen()),
-                    );
+                    context.push('/forgot-password');
                   },
-                  child: Text('Forgot Password?',
-                      style: TextStyle(color: Colors.green.shade700)),
+                  child: const Text('Forgot Password?'),
+                  // REMOVED: style: TextStyle(color: Colors.green.shade700)
+                  // This is now handled by your TextButtonTheme
                 ),
               ),
               const SizedBox(height: 24),
@@ -118,49 +116,49 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   if (_formKey.currentState!.validate()) {
                     final authRepo = ref.read(authRepositoryProvider);
                     try {
-                      // Set loading state explicitly as AuthController is general, not login-specific
-                      // If you want fine-grained login states, a dedicated LoginController would be better
-                      ref.read(authControllerProvider.notifier).state = const AsyncValue.loading();
+                      ref.read(authControllerProvider.notifier).state =
+                      const AsyncValue.loading();
 
                       await authRepo.signInWithEmailPassword(
                         _emailController.text.trim(),
                         _passwordController.text.trim(),
                       );
-                      // On success, the userProvider in main.dart will update,
-                      // causing MyApp to rebuild and navigate to HomeScreen.
-                      ref.read(authControllerProvider.notifier).state = const AsyncValue.data(null); // Clear loading state
+                      ref.read(authControllerProvider.notifier).state =
+                      const AsyncValue.data(null);
                     } on Exception catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Login Failed: ${e.toString()}')),
+                        SnackBar(
+                            content: Text('Login Failed: ${e.toString()}')),
                       );
-                      ref.read(authControllerProvider.notifier).state = AsyncValue.error(e, StackTrace.current);
+                      ref.read(authControllerProvider.notifier).state =
+                          AsyncValue.error(e, StackTrace.current);
                     }
                   }
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+                // REMOVED: style: ElevatedButton.styleFrom(...)
+                // This is now handled by your ElevatedButtonTheme
                 child: loginLoadingState.isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
+                    ? const CircularProgressIndicator(
+                  // This is correct, as your button theme
+                  // sets the foregroundColor to white.
+                  color: Colors.white,
+                )
                     : const Text(
                   'LOGIN',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                  // REMOVED: style: TextStyle(...)
+                  // This is now handled by the textStyle in
+                  // your ElevatedButtonTheme
                 ),
               ),
               const SizedBox(height: 16),
               // Don't have an account?
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => SignUpScreen()),
-                  );
+                  context.push('/signup');
                 },
-                child: Text('Don\'t have an account? Sign Up',
-                    style: TextStyle(color: Colors.green.shade700)),
+                child: const Text('Don\'t have an account? Sign Up'),
+                // REMOVED: style: TextStyle(color: Colors.green.shade700)
+                // This is now handled by your TextButtonTheme
               ),
             ],
           ),
