@@ -14,7 +14,8 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
+  ConsumerState<OtpVerificationScreen> createState() =>
+      _OtpVerificationScreenState();
 }
 
 class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
@@ -51,7 +52,8 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Verify Phone'),
-        backgroundColor: Colors.green.shade800,
+        // REMOVED: backgroundColor: Colors.green.shade800,
+        // This is now handled by AppBarTheme
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -63,14 +65,14 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             children: [
               Text(
                 'Verify Phone Number',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                // UPDATED: Using headlineMedium for consistency with other screens
+                style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Text(
                 'Enter the 6-digit code sent to ${widget.phoneNumber}',
+                // This was already correct!
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
@@ -80,10 +82,12 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 keyboardType: TextInputType.number,
                 maxLength: 6,
                 textAlign: TextAlign.center,
+                // This style is specific to the OTP field and is fine
                 style: const TextStyle(fontSize: 24, letterSpacing: 10),
                 decoration: const InputDecoration(
                   labelText: 'OTP Code',
-                  border: OutlineInputBorder(),
+                  // REMOVED: border: OutlineInputBorder(),
+                  // This is now handled by InputDecorationTheme
                   counterText: "", // Hide the default counter
                 ),
                 validator: (value) {
@@ -107,33 +111,27 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                     );
                   }
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+                // REMOVED: style: ElevatedButton.styleFrom(...)
+                // This is now handled by ElevatedButtonTheme
                 child: signUpState.isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text(
                   'VERIFY',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+                  // REMOVED: style: TextStyle(...)
+                  // This is now handled by the textStyle in ElevatedButtonTheme
                 ),
               ),
               const SizedBox(height: 16),
-              // Optionally add a resend OTP button here
               TextButton(
                 onPressed: signUpState.isLoading
                     ? null
                     : () {
-                  // Implement resend OTP logic (calling verifyPhoneNumber again)
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Resending OTP...')),
                   );
-                  // For a real app, you'd re-initiate phone verification
-                  // For now, it's a placeholder.
+                  // TODO: Implement resend OTP logic
                 },
+                // This child will be styled correctly by TextButtonTheme
                 child: const Text('Resend Code'),
               ),
             ],
