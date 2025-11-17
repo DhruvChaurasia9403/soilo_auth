@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../features/auth/forgot_password_controller.dart';
 
 class ForgotPasswordScreen extends ConsumerWidget {
@@ -7,6 +8,8 @@ class ForgotPasswordScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Note: For a production app, consider using a ConsumerStatefulWidget
+    // to properly dispose of this controller.
     final emailController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
@@ -23,7 +26,7 @@ class ForgotPasswordScreen extends ConsumerWidget {
             const SnackBar(
                 content: Text('Password reset email sent. Check your inbox!')),
           );
-          Navigator.of(context).pop(); // Go back to login screen
+          context.pop(); // Go back to login screen
         }
       },
     );
@@ -33,7 +36,8 @@ class ForgotPasswordScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reset Password'),
-        backgroundColor: Colors.green.shade800,
+        // REMOVED: backgroundColor: Colors.green.shade800,
+        // This is now handled by AppBarTheme
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -45,15 +49,14 @@ class ForgotPasswordScreen extends ConsumerWidget {
             children: [
               Text(
                 'Forgot Your Password?',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green.shade800,
-                ),
+                // UPDATED: Using headlineMedium for consistency
+                style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Text(
                 'Enter your registered email below to receive password reset instructions.',
+                // This was already correct
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
@@ -65,7 +68,8 @@ class ForgotPasswordScreen extends ConsumerWidget {
                 decoration: const InputDecoration(
                   labelText: 'Email Address',
                   prefixIcon: Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(),
+                  // REMOVED: border: OutlineInputBorder(),
+                  // This is now handled by InputDecorationTheme
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty || !value.contains('@')) {
@@ -86,18 +90,14 @@ class ForgotPasswordScreen extends ConsumerWidget {
                         .sendResetEmail(emailController.text.trim());
                   }
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+                // REMOVED: style: ElevatedButton.styleFrom(...)
+                // This is now handled by ElevatedButtonTheme
                 child: resetPasswordState.isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text(
                   'SEND RESET LINK',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+                  // REMOVED: style: TextStyle(...)
+                  // This is now handled by the textStyle in ElevatedButtonTheme
                 ),
               ),
             ],

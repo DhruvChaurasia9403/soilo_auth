@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/signup_controller.dart';
 import 'otp_verification_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
-  const SignUpScreen({super.key}); // Added const constructor
+  const SignUpScreen({super.key});
 
   @override
   ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
@@ -15,7 +16,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+  TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
   @override
@@ -33,27 +35,25 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     final signUpState = ref.watch(signUpControllerProvider);
 
     // Listen to the SignUpController state for navigation or error display
-    ref.listen<AsyncValue<String?>>(
-      signUpControllerProvider,
-          (_, state) {
-        if (state.hasError && !state.isLoading) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.error.toString())),
-          );
-        }
-        if (state.hasValue && state.value != null) {
-          // OTP code has been sent, navigate to verification screen
-          // The `onCodeSent` callback in `signUpAndVerifyPhone` handles the push.
-          // This listener can be used for other side effects if needed.
-          print('OTP code sent successfully. Verification ID: ${state.value}');
-        }
-      },
-    );
+    ref.listen<AsyncValue<String?>>(signUpControllerProvider, (_, state) {
+      if (state.hasError && !state.isLoading) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(state.error.toString())));
+      }
+      if (state.hasValue && state.value != null) {
+        print('OTP code sent successfully. Verification ID: ${state.value}');
+      }
+    });
+
+    // We don't need 'colors' anymore since the AppBarTheme handles it
+    // final colors = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sign Up'),
-        backgroundColor: Colors.green.shade800,
+        // REMOVED: backgroundColor: colors.primary
+        // The AppBarTheme in your factory now handles this automatically.
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -64,10 +64,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             children: [
               Text(
                 'Create Your Account',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green.shade800,
-                ),
+                // UPDATED: Uses the style directly from the theme
+                style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
@@ -77,7 +75,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Full Name',
                   prefixIcon: Icon(Icons.person_outline),
-                  border: OutlineInputBorder(),
+                  // The 'border' is now supplied by inputDecorationTheme
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -87,14 +85,15 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              // Email Address (for password reset and primary Firebase login)
+              // Email Address
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
                   labelText: 'Email Address',
                   prefixIcon: Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(),
+                  // REMOVED: border: OutlineInputBorder()
+                  // This now comes from your theme
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty || !value.contains('@')) {
@@ -104,17 +103,22 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              // Phone Number (for OTP verification during signup)
+              // Phone Number
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
-                  labelText: 'Phone Number (e.g., +15551234567)', // Crucial format hint
+                  labelText:
+                  'Phone Number (e.g., +15551234567)',
                   prefixIcon: Icon(Icons.phone),
-                  border: OutlineInputBorder(),
+                  // REMOVED: border: OutlineInputBorder()
+                  // This now comes from your theme
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty || !value.startsWith('+') || value.length < 10) {
+                  if (value == null ||
+                      value.isEmpty ||
+                      !value.startsWith('+') ||
+                      value.length < 10) {
                     return 'Please enter a valid phone number with country code (e.g., +1XXXXXXXXXX).';
                   }
                   return null;
@@ -128,7 +132,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Password',
                   prefixIcon: Icon(Icons.lock_outline),
-                  border: OutlineInputBorder(),
+                  // REMOVED: border: OutlineInputBorder()
+                  // This now comes from your theme
                 ),
                 validator: (value) {
                   if (value == null || value.length < 6) {
@@ -145,7 +150,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Confirm Password',
                   prefixIcon: Icon(Icons.lock_outline),
-                  border: OutlineInputBorder(),
+                  // This one was already correct!
                 ),
                 validator: (value) {
                   if (value != _passwordController.text) {
@@ -161,53 +166,56 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     ? null
                     : () async {
                   if (_formKey.currentState!.validate()) {
-                    // Trigger the signup and phone verification process
-                    ref.read(signUpControllerProvider.notifier).signUpAndVerifyPhone(
+                    ref
+                        .read(signUpControllerProvider.notifier)
+                        .signUpAndVerifyPhone(
                       email: _emailController.text.trim(),
                       password: _passwordController.text.trim(),
                       phoneNumber: _phoneController.text.trim(),
                       onCodeSent: (verificationId) {
-                        // Navigate to OTP screen immediately after code is sent
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => OtpVerificationScreen(
-                              verificationId: verificationId,
-                              phoneNumber: _phoneController.text.trim(),
-                            ),
-                          ),
+                        context.push(
+                          '/otp-verification',
+                          extra: {
+                            'verificationId': verificationId,
+                            'phoneNumber':
+                            _phoneController.text.trim(),
+                          },
                         );
                       },
                       onError: (error) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Signup Error: $error')),
+                          SnackBar(
+                            content: Text('Signup Error: $error'),
+                          ),
                         );
                       },
                     );
                   }
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
                 child: signUpState.isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
+                    ? const CircularProgressIndicator(
+                  // This hardcoded color is OK because the
+                  // ElevatedButtonThemeData *explicitly* sets its
+                  // foregroundColor to white.
+                  color: Colors.white,
+                )
                     : const Text(
                   'SIGN UP',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                  // REMOVED: style: TextStyle(...)
+                  // This now comes from elevatedButtonTheme's textStyle
                 ),
               ),
               const SizedBox(height: 16),
               // Already have an account?
               TextButton(
                 onPressed: () {
-                  // Pop current screen to go back to login (assuming login is below in navigation stack)
-                  Navigator.of(context).pop();
+                  context.pop();
                 },
-                child: Text('Already have an account? Login',
-                    style: TextStyle(color: Colors.green.shade700)),
+                child: const Text(
+                  'Already have an account? Login',
+                  // REMOVED: style: TextStyle(...)
+                  // This now comes from textButtonTheme
+                ),
               ),
             ],
           ),
