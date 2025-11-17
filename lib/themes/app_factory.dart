@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// 1. ThemeConfig is expanded to hold all theme-specific values.
-///    It no longer just holds "base" colors, but the *actual*
-///    colors the theme components will use.
 class ThemeConfig {
   final Color primaryColor;
   final Color accentColor;
@@ -10,10 +7,10 @@ class ThemeConfig {
   final double borderRadius;
   final bool isDark;
 
-  // Added colors
+  // Specific Component Colors
   final Color scaffoldBg;
   final Color appBarBg;
-  final Color? inputFillColor; // Nullable for light mode
+  final Color? inputFillColor;
   final Color inputLabel;
   final Color inputFloatingLabel;
   final Color inputPrefixIcon;
@@ -23,15 +20,16 @@ class ThemeConfig {
   final Color progressColor;
   final Color snackBarBg;
 
+  // NEW: Gradient Colors for Login/Auth screens
+  final Color gradientStart;
+  final Color gradientEnd;
+
   ThemeConfig({
-    // Base
     required this.primaryColor,
     required this.accentColor,
     required this.lightAccent,
     this.borderRadius = 12,
     required this.isDark,
-
-    // Specific
     required this.scaffoldBg,
     required this.appBarBg,
     this.inputFillColor,
@@ -43,11 +41,11 @@ class ThemeConfig {
     required this.errorColor,
     required this.progressColor,
     required this.snackBarBg,
+    required this.gradientStart,
+    required this.gradientEnd,
   });
 }
 
-/// 2. ThemeFactory is now "dumb". It just applies values from
-///    config and has NO color logic or isDark checks for colors.
 class ThemeFactory {
   final ThemeConfig config;
 
@@ -59,18 +57,27 @@ class ThemeFactory {
     final ColorScheme scheme = ColorScheme.fromSeed(
       seedColor: config.primaryColor,
       brightness: brightness,
-      // You can also define your error color for the whole scheme
       error: config.errorColor,
     );
 
-    // --- (Copied from your previous file) ---
+    // Base Text Theme
     final TextTheme baseTextTheme =
     config.isDark ? Typography.whiteMountainView : Typography.blackMountainView;
 
+    // Custom Text Theme
     final TextTheme customTextTheme = baseTextTheme.copyWith(
-      headlineMedium: baseTextTheme.headlineMedium?.copyWith(
+      // "Welcome to ReadSoil" style
+      headlineLarge: baseTextTheme.headlineLarge?.copyWith(
+        fontSize: 32,
         fontWeight: FontWeight.bold,
-        color: config.isDark ? config.lightAccent : config.primaryColor,
+        color: config.primaryColor,
+        letterSpacing: -0.5,
+      ),
+      // "Sign in to continue" style
+      headlineMedium: baseTextTheme.headlineMedium?.copyWith(
+        fontSize: 18,
+        fontWeight: FontWeight.w500,
+        color: config.isDark ? Colors.grey[300] : Colors.grey[600],
       ),
       titleLarge: baseTextTheme.titleLarge?.copyWith(
         fontSize: 20,
@@ -81,24 +88,19 @@ class ThemeFactory {
         fontSize: 16,
         fontWeight: FontWeight.bold,
       ),
-      labelMedium: baseTextTheme.labelMedium?.copyWith(
-        fontWeight: FontWeight.w600,
-      ),
     );
-    // --- (End of copy) ---
 
     return ThemeData(
       useMaterial3: false,
       brightness: brightness,
       colorScheme: scheme,
       primaryColor: config.primaryColor,
-      // All 'isDark' checks are GONE
       scaffoldBackgroundColor: config.scaffoldBg,
       textTheme: customTextTheme,
 
       // ------------------------- APP BAR -------------------------
       appBarTheme: AppBarTheme(
-        backgroundColor: config.appBarBg, // Just use config value
+        backgroundColor: config.appBarBg,
         foregroundColor: Colors.white,
         elevation: 0,
         titleTextStyle: customTextTheme.titleLarge,
@@ -106,73 +108,62 @@ class ThemeFactory {
 
       // ------------------------- INPUT FIELDS -------------------------
       inputDecorationTheme: InputDecorationTheme(
-        // This is a behavior, not a color, so isDark is fine here
-        filled: config.isDark,
-        fillColor: config.inputFillColor, // Just use config value
+        filled: true,
+        fillColor: config.inputFillColor, // White in light mode
         labelStyle: TextStyle(color: config.inputLabel),
         floatingLabelStyle: TextStyle(
           color: config.inputFloatingLabel,
           fontWeight: FontWeight.w600,
         ),
         prefixIconColor: config.inputPrefixIcon,
+
+        // PILL SHAPE STYLING
+        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(
-            color: config.inputBorder,
-          ),
+          borderRadius: BorderRadius.circular(30), // Full pill shape
+          borderSide: BorderSide.none, // No visible border line
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(
-            color: config.inputBorder,
-          ),
+          borderRadius: BorderRadius.circular(30),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide(
             color: config.inputFocusedBorder,
-            width: 2,
+            width: 1.5,
           ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(
-            color: config.errorColor,
-            width: 1.5,
-          ),
+          borderRadius: BorderRadius.circular(30),
+          borderSide: BorderSide(color: config.errorColor),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: BorderSide(color: config.errorColor, width: 2),
         ),
       ),
 
       // ------------------------- BUTTONS -------------------------
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: config.accentColor, // This was already good
+          backgroundColor: config.accentColor,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(config.borderRadius),
+            borderRadius: BorderRadius.circular(30), // Pill shape
           ),
           textStyle: customTextTheme.labelLarge,
+          elevation: 2, // Subtle shadow
         ),
       ),
 
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          // This one still needs a check, or you can pass it in config
-          foregroundColor:
-          config.isDark ? config.lightAccent : config.primaryColor,
-          textStyle: customTextTheme.labelMedium,
-        ),
-      ),
-
-      // ------------------------- PROGRESS -------------------------
+      // ------------------------- PROGRESS & SNACKBAR -------------------------
       progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: config.progressColor, // Just use config value
+        color: config.progressColor,
       ),
-
-      // ------------------------- SNACKBAR -------------------------
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: config.snackBarBg, // Just use config value
+        backgroundColor: config.snackBarBg,
         contentTextStyle: const TextStyle(color: Colors.white),
         behavior: SnackBarBehavior.floating,
       ),
