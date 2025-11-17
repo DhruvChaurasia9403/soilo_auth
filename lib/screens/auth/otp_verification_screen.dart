@@ -1,10 +1,12 @@
-// lib/screens/auth/otp_verification_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/auth/signup_controller.dart';
-import '../../features/auth/login_controller.dart';
-import '../../features/auth/forgot_password_controller.dart';
+import '../../providers/auth/signup_controller.dart';
+import '../../providers/auth/login_controller.dart';
+import '../../providers/auth/forgot_password_controller.dart'; // For ThemeConfig extension
+import '../../routes/router.dart';
+import '../../themes/app_factory.dart';
 import 'signup_screen.dart' show VerificationPurpose;
 
 class OtpVerificationScreen extends ConsumerStatefulWidget {
@@ -20,7 +22,8 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
+  ConsumerState<OtpVerificationScreen> createState() =>
+      _OtpVerificationScreenState();
 }
 
 class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
@@ -41,12 +44,15 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       _resendEnabled = false;
     });
     Future.doWhile(() async {
+      if (!mounted) return false;
       if (_secondsLeft <= 0) {
         setState(() => _resendEnabled = true);
         return false;
       }
       await Future.delayed(const Duration(seconds: 1));
-      setState(() => _secondsLeft--);
+      if (mounted) {
+        setState(() => _secondsLeft--);
+      }
       return true;
     });
   }
@@ -56,13 +62,20 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       final otp = _otpController.text.trim();
       switch (widget.purpose) {
         case VerificationPurpose.signUp:
-          ref.read(signUpControllerProvider.notifier).completeSignUpWithOtp(widget.verificationId, otp);
+          ref
+              .read(signUpControllerProvider.notifier)
+              .completeSignUpWithOtp(widget.verificationId, otp);
           break;
         case VerificationPurpose.login:
-          ref.read(loginControllerProvider.notifier).completeLoginWithOtp(widget.verificationId, otp);
+          ref
+              .read(loginControllerProvider.notifier)
+              .completeLoginWithOtp(widget.verificationId, otp);
           break;
         case VerificationPurpose.passwordReset:
-          ref.read(forgotPasswordControllerProvider.notifier).verifyOtpAndSignIn(widget.verificationId, otp);
+          // ref.read(isAuthFlowInProgressProvider.notifier).setFlow(true);
+          ref
+              .read(forgotPasswordControllerProvider.notifier)
+              .verifyOtpAndSignIn(widget.verificationId, otp);
           break;
       }
     }
@@ -80,16 +93,13 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   }
 
   String _maskedPhone(String phone) {
-    // mask middle digits for display: keep country code and last 3 digits
     if (phone.length < 6) return phone;
-    final prefix = phone.substring(0, phone.indexOf(RegExp(r'\d')) + 1);
-    final last = phone.length >= 4 ? phone.substring(phone.length - 3) : phone;
-    return '${phone.substring(0, phone.length - 7)}•••$last';
+    final last = phone.length >= 4 ? phone.substring(phone.length - 4) : phone;
+    return '...$last';
   }
 
   @override
   Widget build(BuildContext context) {
-    // listeners for success & errors
     ref.listen<AsyncValue<String?>>(
       signUpControllerProvider,
           (_, state) {
@@ -123,89 +133,134 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         }
       },
     );
+    // (Add other listeners here if needed, kept short for brevity)
 
     final isLoading = _isLoading(ref);
     final theme = Theme.of(context);
+    final themeConfig = Theme.of(context).extension<ThemeConfig>()!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Verify Phone'), centerTitle: true),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        child: Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text('Verify Phone Number', style: theme.textTheme.headlineMedium, textAlign: TextAlign.center),
-                  const SizedBox(height: 8),
-                  Text('Enter the 6-digit code sent to ${_maskedPhone(widget.phoneNumber)}', style: theme.textTheme.bodyMedium, textAlign: TextAlign.center),
-                  const SizedBox(height: 18),
-
-                  // OTP field
-                  TextFormField(
-                    controller: _otpController,
-                    keyboardType: TextInputType.number,
-                    maxLength: 6,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 22, letterSpacing: 8),
-                    decoration: const InputDecoration(labelText: 'OTP Code', counterText: ""),
-                    validator: (value) {
-                      if (value == null || value.length != 6) return 'Please enter a 6-digit OTP.';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 14),
-
-                  SizedBox(
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: isLoading ? null : _onVerifyPressed,
-                      child: isLoading
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text('VERIFY'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [themeConfig.gradientStart, themeConfig.gradientEnd],
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.phonelink_lock,
+                  size: 64,
+                  color: theme.primaryColor,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'OTP Verification',
+                  style: theme.textTheme.headlineMedium, // Uses factory font
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Enter the code sent to number ending in \n${_maskedPhone(widget.phoneNumber)}',
+                  style: theme.textTheme.titleMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 40),
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(_resendEnabled ? 'Didn\'t get it?' : 'Resend available in $_secondsLeft s', style: theme.textTheme.bodySmall),
-                      const SizedBox(width: 12),
-                      TextButton(
-                        onPressed: isLoading || !_resendEnabled
-                            ? null
-                            : () {
-                          // Trigger resend by calling the same controller's send method.
-                          // We don't change behavior: just re-use controllers.
-                          switch (widget.purpose) {
-                            case VerificationPurpose.signUp:
-                            // Need pending data — UI already persisted it in controller
-                            // Here we just show toast. If you have resend token logic, call it via controller.
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Resend requested')));
-                              break;
-                            case VerificationPurpose.login:
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Resend requested')));
-                              break;
-                            case VerificationPurpose.passwordReset:
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Resend requested')));
-                              break;
+                      TextFormField(
+                        controller: _otpController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 6,
+                        textAlign: TextAlign.center,
+                        // FIX: Use theme.textTheme instead of GoogleFonts
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontSize: 24,
+                          letterSpacing: 12, // Only override what's unique
+                          color: themeConfig.textColor,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'OTP Code',
+                          counterText: "",
+                          floatingLabelAlignment: FloatingLabelAlignment.center,
+                          fillColor: themeConfig.inputFillColor,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.length != 6) {
+                            return 'Enter 6-digit code';
                           }
-                          _startCountdown();
+                          return null;
                         },
-                        child: const Text('Resend Code'),
-                      )
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: isLoading ? null : _onVerifyPressed,
+                          child: isLoading
+                              ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                              : const Text('VERIFY'),
+                          // Text style comes from ElevatedButtonTheme
+                        ),
+                      ),
                     ],
                   ),
-                ],
-              ),
-            ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _resendEnabled
+                          ? 'Didn\'t receive code?'
+                          : 'Resend in 00:${_secondsLeft.toString().padLeft(2, '0')}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton(
+                      onPressed: isLoading || !_resendEnabled
+                          ? null
+                          : () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Resend code requested')),
+                        );
+                        _startCountdown();
+                      },
+                      child: Text(
+                        'Resend',
+                        // FIX: Use standard styles or copyWith
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: _resendEnabled
+                              ? theme.primaryColor
+                              : Colors.grey,
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              ],
+            ).animate().fadeIn(duration: 500.ms),
           ),
         ),
       ),

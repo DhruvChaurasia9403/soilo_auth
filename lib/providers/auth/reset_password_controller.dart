@@ -2,7 +2,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'auth_repository.dart';
+import '../../features/auth/auth_repository.dart';
 
 class ResetPasswordController extends AsyncNotifier<void> {
   @override

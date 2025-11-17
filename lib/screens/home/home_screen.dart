@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../features/auth/auth_controller.dart'; // Import AuthController for logout
+import '../../providers/auth/auth_controller.dart'; // Import AuthController for logout
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});

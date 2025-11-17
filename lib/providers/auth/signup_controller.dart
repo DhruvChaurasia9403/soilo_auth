@@ -2,7 +2,7 @@
 import 'package:checking/features/auth/user_role.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'auth_repository.dart';
+import '../../features/auth/auth_repository.dart';
 
 class SignUpController extends AsyncNotifier<String?> {
   // Will hold verificationId (state) AND pending sign-up details

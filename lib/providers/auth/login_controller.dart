@@ -1,7 +1,9 @@
 // lib/features/auth/login_controller.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'auth_repository.dart';
+
+import '../../features/auth/auth_repository.dart';
+
 
 class LoginController extends AsyncNotifier<String?> {
   String? _pendingPhone;

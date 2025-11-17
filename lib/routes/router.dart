@@ -15,6 +15,7 @@ final authStateProvider = StreamProvider<User?>(
       (ref) => FirebaseAuth.instance.authStateChanges(),
 );
 
+
 // --- ROUTER PROVIDER ---
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -51,6 +52,9 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (isAuth && isLoggingIn) {
         // User logged in but on an auth screen
+        if(isResettingPassword){
+          return null;
+        }
         // → redirect to home
         return '/home';
       }

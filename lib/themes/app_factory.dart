@@ -1,26 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-class ThemeConfig {
+/// UPDATED: Extends ThemeExtension so we can retrieve it in LoginScreen
+class ThemeConfig extends ThemeExtension<ThemeConfig> {
   final Color primaryColor;
   final Color accentColor;
   final Color lightAccent;
-  final double borderRadius;
   final bool isDark;
 
-  // Specific Component Colors
   final Color scaffoldBg;
   final Color appBarBg;
+  final Color textColor;
+
   final Color? inputFillColor;
   final Color inputLabel;
   final Color inputFloatingLabel;
   final Color inputPrefixIcon;
   final Color inputBorder;
   final Color inputFocusedBorder;
+
   final Color errorColor;
   final Color progressColor;
   final Color snackBarBg;
 
-  // NEW: Gradient Colors for Login/Auth screens
   final Color gradientStart;
   final Color gradientEnd;
 
@@ -28,10 +30,10 @@ class ThemeConfig {
     required this.primaryColor,
     required this.accentColor,
     required this.lightAccent,
-    this.borderRadius = 12,
     required this.isDark,
     required this.scaffoldBg,
     required this.appBarBg,
+    required this.textColor,
     this.inputFillColor,
     required this.inputLabel,
     required this.inputFloatingLabel,
@@ -44,6 +46,56 @@ class ThemeConfig {
     required this.gradientStart,
     required this.gradientEnd,
   });
+
+  @override
+  ThemeConfig copyWith({
+    Color? primaryColor,
+    Color? accentColor,
+    Color? lightAccent,
+    bool? isDark,
+    Color? scaffoldBg,
+    Color? appBarBg,
+    Color? textColor,
+    Color? inputFillColor,
+    Color? inputLabel,
+    Color? inputFloatingLabel,
+    Color? inputPrefixIcon,
+    Color? inputBorder,
+    Color? inputFocusedBorder,
+    Color? errorColor,
+    Color? progressColor,
+    Color? snackBarBg,
+    Color? gradientStart,
+    Color? gradientEnd,
+  }) {
+    return ThemeConfig(
+      primaryColor: primaryColor ?? this.primaryColor,
+      accentColor: accentColor ?? this.accentColor,
+      lightAccent: lightAccent ?? this.lightAccent,
+      isDark: isDark ?? this.isDark,
+      scaffoldBg: scaffoldBg ?? this.scaffoldBg,
+      appBarBg: appBarBg ?? this.appBarBg,
+      textColor: textColor ?? this.textColor,
+      inputFillColor: inputFillColor ?? this.inputFillColor,
+      inputLabel: inputLabel ?? this.inputLabel,
+      inputFloatingLabel: inputFloatingLabel ?? this.inputFloatingLabel,
+      inputPrefixIcon: inputPrefixIcon ?? this.inputPrefixIcon,
+      inputBorder: inputBorder ?? this.inputBorder,
+      inputFocusedBorder: inputFocusedBorder ?? this.inputFocusedBorder,
+      errorColor: errorColor ?? this.errorColor,
+      progressColor: progressColor ?? this.progressColor,
+      snackBarBg: snackBarBg ?? this.snackBarBg,
+      gradientStart: gradientStart ?? this.gradientStart,
+      gradientEnd: gradientEnd ?? this.gradientEnd,
+    );
+  }
+
+  // Simple lerp that switches themes instantly (sufficient for Login)
+  @override
+  ThemeConfig lerp(ThemeExtension<ThemeConfig>? other, double t) {
+    if (other is! ThemeConfig) return this;
+    return t < 0.5 ? this : other;
+  }
 }
 
 class ThemeFactory {
@@ -58,35 +110,28 @@ class ThemeFactory {
       seedColor: config.primaryColor,
       brightness: brightness,
       error: config.errorColor,
+      secondary: config.accentColor,
     );
 
-    // Base Text Theme
-    final TextTheme baseTextTheme =
-    config.isDark ? Typography.whiteMountainView : Typography.blackMountainView;
+    final TextTheme baseTextTheme = GoogleFonts.poppinsTextTheme(
+      config.isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme,
+    );
 
-    // Custom Text Theme
-    final TextTheme customTextTheme = baseTextTheme.copyWith(
-      // "Welcome to ReadSoil" style
-      headlineLarge: baseTextTheme.headlineLarge?.copyWith(
-        fontSize: 32,
+    final TextTheme customTextTheme = baseTextTheme.apply(
+      bodyColor: config.textColor,
+      displayColor: config.textColor,
+    ).copyWith(
+      headlineMedium: baseTextTheme.headlineMedium?.copyWith(
         fontWeight: FontWeight.bold,
         color: config.primaryColor,
-        letterSpacing: -0.5,
       ),
-      // "Sign in to continue" style
-      headlineMedium: baseTextTheme.headlineMedium?.copyWith(
-        fontSize: 18,
-        fontWeight: FontWeight.w500,
-        color: config.isDark ? Colors.grey[300] : Colors.grey[600],
+      titleMedium: baseTextTheme.titleMedium?.copyWith(
+        color: config.isDark ? Colors.grey[300] : const Color(0xFF1C2A3A),
       ),
       titleLarge: baseTextTheme.titleLarge?.copyWith(
         fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: Colors.white,
-      ),
-      labelLarge: baseTextTheme.labelLarge?.copyWith(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w600,
+        color: config.textColor,
       ),
     );
 
@@ -98,74 +143,84 @@ class ThemeFactory {
       scaffoldBackgroundColor: config.scaffoldBg,
       textTheme: customTextTheme,
 
-      // ------------------------- APP BAR -------------------------
+      // -------------------------------------------------------
+      // CRITICAL FIX: Register the config as an extension here
+      // -------------------------------------------------------
+      extensions: [
+        config,
+      ],
+
       appBarTheme: AppBarTheme(
-        backgroundColor: config.appBarBg,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
+        iconTheme: IconThemeData(color: config.textColor),
         titleTextStyle: customTextTheme.titleLarge,
       ),
 
-      // ------------------------- INPUT FIELDS -------------------------
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: config.inputFillColor, // White in light mode
+        fillColor: config.inputFillColor,
         labelStyle: TextStyle(color: config.inputLabel),
         floatingLabelStyle: TextStyle(
           color: config.inputFloatingLabel,
           fontWeight: FontWeight.w600,
         ),
         prefixIconColor: config.inputPrefixIcon,
-
-        // PILL SHAPE STYLING
-        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30), // Full pill shape
-          borderSide: BorderSide.none, // No visible border line
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
             color: config.inputFocusedBorder,
-            width: 1.5,
+            width: 2,
           ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: config.errorColor),
         ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide(color: config.errorColor, width: 2),
-        ),
       ),
 
-      // ------------------------- BUTTONS -------------------------
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: config.accentColor,
+          backgroundColor: config.primaryColor,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30), // Pill shape
+            borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: customTextTheme.labelLarge,
-          elevation: 2, // Subtle shadow
+          elevation: 4,
+          shadowColor: config.primaryColor.withOpacity(0.3),
         ),
       ),
 
-      // ------------------------- PROGRESS & SNACKBAR -------------------------
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          side: BorderSide(color: Colors.grey.shade300),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: config.progressColor,
       ),
-      snackBarTheme: SnackBarThemeData(
-        backgroundColor: config.snackBarBg,
-        contentTextStyle: const TextStyle(color: Colors.white),
-        behavior: SnackBarBehavior.floating,
+
+      cardTheme: CardThemeData(
+        elevation: 2,
+        color: config.isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shadowColor: config.primaryColor.withOpacity(0.1),
       ),
     );
   }

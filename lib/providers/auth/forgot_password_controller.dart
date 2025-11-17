@@ -1,7 +1,7 @@
 // lib/features/auth/forgot_password_controller.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'auth_repository.dart';
+import '../../features/auth/auth_repository.dart';
 
 // This controller will hold the verificationId
 class ForgotPasswordController extends AsyncNotifier<String?> {

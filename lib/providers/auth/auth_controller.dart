@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // Correct import path
-import 'auth_repository.dart';
+import '../../features/auth/auth_repository.dart';
 
 // Provides the current User, or null if logged out.
 final userProvider = StreamProvider<User?>((ref) {
