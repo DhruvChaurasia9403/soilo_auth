@@ -1,7 +1,7 @@
+// lib/features/auth/forgot_password_controller.dart
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'auth_repository.dart';
-
 
 // This controller will hold the verificationId
 class ForgotPasswordController extends AsyncNotifier<String?> {
@@ -10,7 +10,7 @@ class ForgotPasswordController extends AsyncNotifier<String?> {
     return null; // Initial state: no verification ID
   }
 
-  // UPDATED: This method now sends an OTP
+  // This method now sends an OTP for password reset
   Future<void> sendVerificationOtp({
     required String phoneNumber,
     required Function(String verificationId) onCodeSent,
@@ -41,8 +41,8 @@ class ForgotPasswordController extends AsyncNotifier<String?> {
     }
   }
 
-  // This method is for completing the OTP verification
-  // This step will sign the user in *temporarily*
+  // This method is for completing the OTP verification for reset flow
+  // It signs the user in (temporarily) so they can update their password
   Future<void> verifyOtpAndSignIn(String verificationId, String smsCode) async {
     state = const AsyncValue.loading();
     final authRepository = ref.read(authRepositoryProvider);
@@ -51,16 +51,17 @@ class ForgotPasswordController extends AsyncNotifier<String?> {
       // so they have permission to change their password.
       await authRepository.signInWithPhoneNumberAndOtp(verificationId, smsCode);
 
-      // We set state to null, but we don't navigate from here.
-      // The OTP screen will handle navigation to the reset screen.
+      // Keep state data null but indicate success
       state = const AsyncValue.data(null);
+    } on FirebaseAuthException catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
     } on Exception catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
     }
   }
 }
 
-// ⭐ CRITICAL: Must not be .autoDispose
+// Must not be .autoDispose so verificationId persists during OTP flow
 final forgotPasswordControllerProvider =
 AsyncNotifierProvider<ForgotPasswordController, String?>(() {
   return ForgotPasswordController();

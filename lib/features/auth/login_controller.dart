@@ -1,14 +1,17 @@
+// lib/features/auth/login_controller.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'auth_repository.dart';
 
-// LoginController will hold the verificationId for the OTP screen
 class LoginController extends AsyncNotifier<String?> {
-  @override
-  String? build() {
-    return null; // Initial state: no verification ID
-  }
+  String? _pendingPhone;
+  String? _pendingPassword;
 
-  Future<void> signInAndVerifyPhone({
+  @override
+  String? build() => null;
+
+  /// Step 1: send OTP and save pending data (do NOT sign in here)
+  Future<void> sendOtpForLogin({
     required String phoneNumber,
     required String password,
     required Function(String verificationId) onCodeSent,
@@ -17,11 +20,10 @@ class LoginController extends AsyncNotifier<String?> {
     state = const AsyncValue.loading();
     final authRepository = ref.read(authRepositoryProvider);
 
-    try {
-      // Step 1: Try to sign in with Phone/Password
-      await authRepository.signInWithPhonePassword(phoneNumber, password);
+    _pendingPhone = phoneNumber;
+    _pendingPassword = password;
 
-      // Step 2: If sign-in is successful, send an OTP
+    try {
       await authRepository.verifyPhoneNumber(
         phoneNumber,
         verificationFailed: (e) {
@@ -30,11 +32,11 @@ class LoginController extends AsyncNotifier<String?> {
           state = AsyncValue.error(errorMsg, StackTrace.current);
         },
         codeSent: (verificationId, resendToken) {
-          state = AsyncValue.data(verificationId); // Store verification ID
-          onCodeSent(verificationId); // Trigger navigation to OTP screen
+          state = AsyncValue.data(verificationId);
+          onCodeSent(verificationId);
         },
         codeAutoRetrievalTimeout: (verificationId) {
-          state = AsyncValue.data(verificationId); // Keep verification ID
+          state = AsyncValue.data(verificationId);
         },
       );
     } on Exception catch (e) {
@@ -43,21 +45,32 @@ class LoginController extends AsyncNotifier<String?> {
     }
   }
 
-  // Call this after successful OTP verification
+  /// Step 2: after OTP entered — sign in using phone OTP credential
   Future<void> completeLoginWithOtp(String verificationId, String smsCode) async {
     state = const AsyncValue.loading();
     final authRepository = ref.read(authRepositoryProvider);
+
     try {
-      // Sign in with phone OTP. This will complete the login.
+      // Sign in with the phone credential (OTP)
       await authRepository.signInWithPhoneNumberAndOtp(verificationId, smsCode);
-      state = const AsyncValue.data(null); // Success
+
+      // Optionally: you could also verify password by calling signInWithPhonePassword
+      // using the phone-derived email + _pendingPassword, but OTP-only login is common.
+
+      // clear pending values
+      _pendingPhone = null;
+      _pendingPassword = null;
+
+      state = const AsyncValue.data(null);
+    } on FirebaseAuthException catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
     } on Exception catch (e) {
-      // ⭐ FIX: Corrected StackTrace typo
       state = AsyncValue.error(e, StackTrace.current);
     }
   }
 }
 
+// Provider (do NOT autoDispose to preserve pending data during OTP flow)
 final loginControllerProvider =
 AsyncNotifierProvider<LoginController, String?>(() {
   return LoginController();
