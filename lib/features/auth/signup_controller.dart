@@ -1,8 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // Correct import path
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'auth_repository.dart';
+import 'user_role.dart'; // 👈 ADD
 
-// Renamed from AutoDisposeAsyncNotifier to AsyncNotifier
+// Renamed from AsyncNotifier to AsyncNotifier
 class SignUpController extends AsyncNotifier<String?> {
   // State will hold the verificationId for OTP screen, or null
   @override
@@ -10,10 +10,12 @@ class SignUpController extends AsyncNotifier<String?> {
     return null; // Initial state: no verification ID
   }
 
+  // UPDATED: New signature
   Future<void> signUpAndVerifyPhone({
-    required String email,
+    required String fullName, // 👈 ADD
     required String password,
     required String phoneNumber,
+    required UserRole role, // 👈 ADD
     required Function(String verificationId) onCodeSent, // Callback to navigate to OTP screen
     required Function(String error) onError,
   }) async {
@@ -22,42 +24,36 @@ class SignUpController extends AsyncNotifier<String?> {
     final authRepository = ref.read(authRepositoryProvider);
 
     try {
-      // Step 1: Create user with Email/Password first
-      // Firebase needs a user to be associated with a phone number for direct sign-in with phone.
-      // Alternatively, you could skip this step and just verify phone, then create custom user.
-      // For simplicity here, we create email/password user first.
-      // final userCredential = await authRepository.signUpWithEmailPassword(email, password);
+      // Step 1: Create user with Phone/Password
+      final userCredential = await authRepository.signUpWithPhonePassword(phoneNumber, password);
 
-      // IMPORTANT: Firebase will send OTP to the phone number.
-      // If the email/password user is created *first*, you might want to link the phone
-      // to this user later, or ensure the phone number is added to a custom user profile
-      // in Firestore/Realtime DB if you intend to query by phone later.
-      // For phone sign-in after OTP, the user is created or linked implicitly.
-      // For this flow, we're relying on the phone verification itself to establish
-      // the phone number as an authenticated credential for the user created by email/password.
-      // This is a subtle but important Firebase distinction.
+      if (userCredential.user == null) {
+        throw Exception('User creation failed.');
+      }
 
+      final uid = userCredential.user!.uid;
 
-      // Step 2: Verify phone number
-      // Note: The phone number verification itself can create or link to a user.
-      // Since we already created an email/password user, if the phone number
-      // is not already linked, verifyPhoneNumber might act as an update/link.
-      // For a robust system, you'd usually complete phone auth then link it to the email account.
-      // For simplicity in this example, we proceed with verification after email/password user is made.
+      // Step 2: Create user profile in Firestore
+      await authRepository.createUserProfile(
+        uid: uid,
+        fullName: fullName,
+        phoneNumber: phoneNumber,
+        role: role,
+      );
+
+      // Step 3: Verify phone number
       await authRepository.verifyPhoneNumber(
         phoneNumber,
         verificationFailed: (e) {
-          onError(e.message ?? 'Phone verification failed.');
-          state = AsyncValue.error(e, StackTrace.current);
+          final errorMsg = e.message ?? 'Phone verification failed.';
+          onError(errorMsg);
+          state = AsyncValue.error(errorMsg, StackTrace.current);
         },
         codeSent: (verificationId, resendToken) {
           state = AsyncValue.data(verificationId); // Store verification ID
           onCodeSent(verificationId); // Trigger navigation to OTP screen
         },
         codeAutoRetrievalTimeout: (verificationId) {
-          // This happens when the SMS isn't auto-read within the timeout.
-          // The verificationId is still valid.
-          // You might want to update UI to show manual input is needed.
           state = AsyncValue.data(verificationId); // Keep verification ID
         },
       );
@@ -72,19 +68,19 @@ class SignUpController extends AsyncNotifier<String?> {
     state = const AsyncValue.loading();
     final authRepository = ref.read(authRepositoryProvider);
     try {
-      // Sign in with phone OTP. This will authenticate the user with their phone credential.
-      // Since we already created an email/password user, Firebase will link this phone credential
-      // to the existing user if they match based on initial creation context.
+      // Sign in with phone OTP. This will authenticate the user.
       await authRepository.signInWithPhoneNumberAndOtp(verificationId, smsCode);
-      state = const AsyncValue.data(null); // Success, no verification ID needed anymore
+      // On success, the authStateChanges stream will fire.
+      // GoRouter will automatically navigate to the home screen.
+      state = const AsyncValue.data(null); // Success
     } on Exception catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
     }
   }
 }
 
-// Renamed from AutoDisposeAsyncNotifierProvider to AsyncNotifierProvider.autoDispose
+// ⭐ CRITICAL CHANGE: Removed .autoDispose
 final signUpControllerProvider =
-AsyncNotifierProvider.autoDispose<SignUpController, String?>(() {
+AsyncNotifierProvider<SignUpController, String?>(() {
   return SignUpController();
 });

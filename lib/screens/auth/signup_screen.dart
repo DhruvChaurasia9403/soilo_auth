@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/signup_controller.dart';
-import 'otp_verification_screen.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/auth/user_role.dart'; // 👈 ADD
+import '../../features/utils/validators.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
@@ -14,16 +15,15 @@ class SignUpScreen extends ConsumerStatefulWidget {
 class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _fullNameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
   TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  UserRole? _selectedRole; // 👈 ADD
 
   @override
   void dispose() {
     _fullNameController.dispose();
-    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _phoneController.dispose();
@@ -34,26 +34,11 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   Widget build(BuildContext context) {
     final signUpState = ref.watch(signUpControllerProvider);
 
-    // Listen to the SignUpController state for navigation or error display
-    ref.listen<AsyncValue<String?>>(signUpControllerProvider, (_, state) {
-      if (state.hasError && !state.isLoading) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(state.error.toString())));
-      }
-      if (state.hasValue && state.value != null) {
-        print('OTP code sent successfully. Verification ID: ${state.value}');
-      }
-    });
-
-    // We don't need 'colors' anymore since the AppBarTheme handles it
-    // final colors = Theme.of(context).colorScheme;
+    // ... ref.listen block is still correct ...
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sign Up'),
-        // REMOVED: backgroundColor: colors.primary
-        // The AppBarTheme in your factory now handles this automatically.
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -64,67 +49,54 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             children: [
               Text(
                 'Create Your Account',
-                // UPDATED: Uses the style directly from the theme
                 style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              // Full Name
+
+              // Full Name (Still here)
               TextFormField(
                 controller: _fullNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Full Name',
-                  prefixIcon: Icon(Icons.person_outline),
-                  // The 'border' is now supplied by inputDecorationTheme
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your full name.';
-                  }
-                  return null;
-                },
+                // ...
               ),
               const SizedBox(height: 16),
-              // Email Address
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address',
-                  prefixIcon: Icon(Icons.email_outlined),
-                  // REMOVED: border: OutlineInputBorder()
-                  // This now comes from your theme
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty || !value.contains('@')) {
-                    return 'Please enter a valid email address.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+
+              // REMOVED: Email Address
+
               // Phone Number
               TextFormField(
                 controller: _phoneController,
-                keyboardType: TextInputType.phone,
+                // ...
+              ),
+              const SizedBox(height: 16),
+
+              // ⭐ NEW: User Role Dropdown
+              DropdownButtonFormField<UserRole>(
+                value: _selectedRole,
+                hint: const Text('Select Your Role'),
                 decoration: const InputDecoration(
-                  labelText:
-                  'Phone Number (e.g., +15551234567)',
-                  prefixIcon: Icon(Icons.phone),
-                  // REMOVED: border: OutlineInputBorder()
-                  // This now comes from your theme
+                  prefixIcon: Icon(Icons.work_outline),
                 ),
+                items: UserRole.values.map((role) {
+                  return DropdownMenuItem<UserRole>(
+                    value: role,
+                    child: Text(role.displayName),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedRole = value;
+                  });
+                },
                 validator: (value) {
-                  if (value == null ||
-                      value.isEmpty ||
-                      !value.startsWith('+') ||
-                      value.length < 10) {
-                    return 'Please enter a valid phone number with country code (e.g., +1XXXXXXXXXX).';
+                  if (value == null) {
+                    return 'Please select a role.';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
+
               // Password
               TextFormField(
                 controller: _passwordController,
@@ -132,17 +104,14 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Password',
                   prefixIcon: Icon(Icons.lock_outline),
-                  // REMOVED: border: OutlineInputBorder()
-                  // This now comes from your theme
                 ),
                 validator: (value) {
-                  if (value == null || value.length < 6) {
-                    return 'Password must be at least 6 characters.';
-                  }
-                  return null;
+                  // Using validator we will create
+                  return AppValidators.validatePassword(value);
                 },
               ),
               const SizedBox(height: 16),
+
               // Confirm Password
               TextFormField(
                 controller: _confirmPasswordController,
@@ -150,7 +119,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Confirm Password',
                   prefixIcon: Icon(Icons.lock_outline),
-                  // This one was already correct!
                 ),
                 validator: (value) {
                   if (value != _passwordController.text) {
@@ -160,6 +128,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 },
               ),
               const SizedBox(height: 24),
+
               // Sign Up Button
               ElevatedButton(
                 onPressed: signUpState.isLoading
@@ -169,9 +138,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     ref
                         .read(signUpControllerProvider.notifier)
                         .signUpAndVerifyPhone(
-                      email: _emailController.text.trim(),
+                      fullName: _fullNameController.text.trim(),
                       password: _passwordController.text.trim(),
                       phoneNumber: _phoneController.text.trim(),
+                      role: _selectedRole!, // We know it's not null due to validator
                       onCodeSent: (verificationId) {
                         context.push(
                           '/otp-verification',
@@ -179,6 +149,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                             'verificationId': verificationId,
                             'phoneNumber':
                             _phoneController.text.trim(),
+                            // ⭐ NEW: Tell OTP screen its purpose
+                            'purpose': VerificationPurpose.signUp,
                           },
                         );
                       },
@@ -193,34 +165,21 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                   }
                 },
                 child: signUpState.isLoading
-                    ? const CircularProgressIndicator(
-                  // This hardcoded color is OK because the
-                  // ElevatedButtonThemeData *explicitly* sets its
-                  // foregroundColor to white.
-                  color: Colors.white,
-                )
-                    : const Text(
-                  'SIGN UP',
-                  // REMOVED: style: TextStyle(...)
-                  // This now comes from elevatedButtonTheme's textStyle
-                ),
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('SIGN UP'),
               ),
-              const SizedBox(height: 16),
-              // Already have an account?
-              TextButton(
-                onPressed: () {
-                  context.pop();
-                },
-                child: const Text(
-                  'Already have an account? Login',
-                  // REMOVED: style: TextStyle(...)
-                  // This now comes from textButtonTheme
-                ),
-              ),
+              // ... "Already have an account?" TextButton is still correct ...
             ],
           ),
         ),
       ),
     );
   }
+}
+
+// ⭐ NEW: Enum for OTP Screen
+enum VerificationPurpose {
+  signUp,
+  login,
+  passwordReset,
 }

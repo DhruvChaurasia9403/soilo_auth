@@ -1,18 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'auth_repository.dart';
 
-
-// This controller will hold the verificationId
-class ForgotPasswordController extends AsyncNotifier<String?> {
+// LoginController will hold the verificationId for the OTP screen
+class LoginController extends AsyncNotifier<String?> {
   @override
   String? build() {
     return null; // Initial state: no verification ID
   }
 
-  // UPDATED: This method now sends an OTP
-  Future<void> sendVerificationOtp({
+  Future<void> signInAndVerifyPhone({
     required String phoneNumber,
+    required String password,
     required Function(String verificationId) onCodeSent,
     required Function(String error) onError,
   }) async {
@@ -20,6 +18,10 @@ class ForgotPasswordController extends AsyncNotifier<String?> {
     final authRepository = ref.read(authRepositoryProvider);
 
     try {
+      // Step 1: Try to sign in with Phone/Password
+      await authRepository.signInWithPhonePassword(phoneNumber, password);
+
+      // Step 2: If sign-in is successful, send an OTP
       await authRepository.verifyPhoneNumber(
         phoneNumber,
         verificationFailed: (e) {
@@ -41,27 +43,22 @@ class ForgotPasswordController extends AsyncNotifier<String?> {
     }
   }
 
-  // This method is for completing the OTP verification
-  // This step will sign the user in *temporarily*
-  Future<void> verifyOtpAndSignIn(String verificationId, String smsCode) async {
+  // Call this after successful OTP verification
+  Future<void> completeLoginWithOtp(String verificationId, String smsCode) async {
     state = const AsyncValue.loading();
     final authRepository = ref.read(authRepositoryProvider);
     try {
-      // Sign in with phone OTP. This authenticates the user
-      // so they have permission to change their password.
+      // Sign in with phone OTP. This will complete the login.
       await authRepository.signInWithPhoneNumberAndOtp(verificationId, smsCode);
-
-      // We set state to null, but we don't navigate from here.
-      // The OTP screen will handle navigation to the reset screen.
-      state = const AsyncValue.data(null);
+      state = const AsyncValue.data(null); // Success
     } on Exception catch (e) {
+      // ⭐ FIX: Corrected StackTrace typo
       state = AsyncValue.error(e, StackTrace.current);
     }
   }
 }
 
-// ⭐ CRITICAL: Must not be .autoDispose
-final forgotPasswordControllerProvider =
-AsyncNotifierProvider<ForgotPasswordController, String?>(() {
-  return ForgotPasswordController();
+final loginControllerProvider =
+AsyncNotifierProvider<LoginController, String?>(() {
+  return LoginController();
 });

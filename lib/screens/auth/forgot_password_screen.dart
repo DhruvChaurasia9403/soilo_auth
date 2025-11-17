@@ -1,32 +1,36 @@
+import 'package:checking/screens/auth/signup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/forgot_password_controller.dart';
 
-class ForgotPasswordScreen extends ConsumerWidget {
+// Converted to ConsumerStatefulWidget to manage the controller
+class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Note: For a production app, consider using a ConsumerStatefulWidget
-    // to properly dispose of this controller.
-    final emailController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
+  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+}
 
-    ref.listen<AsyncValue<void>>(
+class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
+  final _phoneController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<AsyncValue<String?>>(
       forgotPasswordControllerProvider,
           (_, state) {
         if (state.hasError && !state.isLoading) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.error.toString())),
           );
-        }
-        if (state.hasValue) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Password reset email sent. Check your inbox!')),
-          );
-          context.pop(); // Go back to login screen
         }
       },
     );
@@ -36,44 +40,41 @@ class ForgotPasswordScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reset Password'),
-        // REMOVED: backgroundColor: Colors.green.shade800,
-        // This is now handled by AppBarTheme
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Form(
-          key: formKey,
+          key: _formKey,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
                 'Forgot Your Password?',
-                // UPDATED: Using headlineMedium for consistency
                 style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Text(
-                'Enter your registered email below to receive password reset instructions.',
-                // This was already correct
+                'Enter your registered phone number below to receive a verification code.',
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              // Email Text Field
+              // Phone Text Field
               TextFormField(
-                controller: emailController,
-                keyboardType: TextInputType.emailAddress,
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
-                  labelText: 'Email Address',
-                  prefixIcon: Icon(Icons.email_outlined),
-                  // REMOVED: border: OutlineInputBorder(),
-                  // This is now handled by InputDecorationTheme
+                  labelText: 'Phone Number (e.g., +15551234567)',
+                  prefixIcon: Icon(Icons.phone),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty || !value.contains('@')) {
-                    return 'Please enter a valid email address.';
+                  if (value == null ||
+                      value.isEmpty ||
+                      !value.startsWith('+') ||
+                      value.length < 10) {
+                    return 'Please enter a valid phone number with country code.';
                   }
                   return null;
                 },
@@ -84,21 +85,32 @@ class ForgotPasswordScreen extends ConsumerWidget {
                 onPressed: resetPasswordState.isLoading
                     ? null
                     : () {
-                  if (formKey.currentState!.validate()) {
+                  if (_formKey.currentState!.validate()) {
                     ref
                         .read(forgotPasswordControllerProvider.notifier)
-                        .sendResetEmail(emailController.text.trim());
+                        .sendVerificationOtp(
+                      phoneNumber: _phoneController.text.trim(),
+                      onCodeSent: (verificationId) {
+                        context.push(
+                          '/otp-verification',
+                          extra: {
+                            'verificationId': verificationId,
+                            'phoneNumber': _phoneController.text.trim(),
+                            'purpose': VerificationPurpose.passwordReset,
+                          },
+                        );
+                      },
+                      onError: (error) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $error')),
+                        );
+                      },
+                    );
                   }
                 },
-                // REMOVED: style: ElevatedButton.styleFrom(...)
-                // This is now handled by ElevatedButtonTheme
                 child: resetPasswordState.isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                  'SEND RESET LINK',
-                  // REMOVED: style: TextStyle(...)
-                  // This is now handled by the textStyle in ElevatedButtonTheme
-                ),
+                    : const Text('SEND VERIFICATION CODE'),
               ),
             ],
           ),

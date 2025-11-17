@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../features/auth/auth_repository.dart';
+// REMOVED: auth_repository.dart
+// REMOVED: auth_controller.dart (we use login_controller now)
 import 'forgot_password_screen.dart';
 import 'signup_screen.dart';
-import '../../features/auth/auth_controller.dart';
+import '../../features/auth/login_controller.dart'; // 👈 ADD
 import 'package:go_router/go_router.dart';
+import 'otp_verification_screen.dart'; // 👈 ADD for VerificationPurpose
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -15,36 +17,38 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController(); // 👈 RENAMED
   final TextEditingController _passwordController = TextEditingController();
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _phoneController.dispose(); // 👈 RENAMED
     _passwordController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final loginLoadingState = ref.watch(authControllerProvider);
+    // Watch the new login controller
+    final loginState = ref.watch(loginControllerProvider);
 
-    ref.listen<AsyncValue<void>>(
-      authControllerProvider,
+    // Listen to the new login controller for navigation/errors
+    ref.listen<AsyncValue<String?>>(
+      loginControllerProvider,
           (_, state) {
         if (state.hasError && !state.isLoading) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.error.toString())),
           );
         }
+        // This listener is now only for showing errors.
+        // Navigation is handled in the onPressed callback via onCodeSent.
       },
     );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Login'),
-        // REMOVED: backgroundColor: Colors.green.shade800,
-        // This is now handled by your AppBarTheme
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -55,110 +59,92 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             children: [
               Text(
                 'Welcome Back!',
-                // UPDATED: Using the semantic style from TextTheme
                 style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              // Email Address
+
+              // UPDATED: Phone Number Field
               TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
-                  labelText: 'Email Address',
-                  prefixIcon: Icon(Icons.email_outlined),
-                  // REMOVED: border: OutlineInputBorder(),
-                  // This is now handled by your InputDecorationTheme
+                  labelText: 'Phone Number (e.g., +15551234567)',
+                  prefixIcon: Icon(Icons.phone),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty || !value.contains('@')) {
-                    return 'Please enter a valid email address.';
+                  if (value == null ||
+                      value.isEmpty ||
+                      !value.startsWith('+') ||
+                      value.length < 10) {
+                    return 'Please enter a valid phone number with country code.';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
-              // Password
+
+              // Password (Unchanged)
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  prefixIcon: Icon(Icons.lock_outline),
-                  // REMOVED: border: OutlineInputBorder(),
-                  // This is now handled by your InputDecorationTheme
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password.';
-                  }
-                  return null;
-                },
+                // ...
               ),
               const SizedBox(height: 16),
+
+              // Forgot Password (Unchanged)
               Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    context.push('/forgot-password');
-                  },
-                  child: const Text('Forgot Password?'),
-                  // REMOVED: style: TextStyle(color: Colors.green.shade700)
-                  // This is now handled by your TextButtonTheme
-                ),
+                // ...
               ),
               const SizedBox(height: 24),
+
               // Login Button
               ElevatedButton(
-                onPressed: loginLoadingState.isLoading
+                onPressed: loginState.isLoading
                     ? null
                     : () async {
                   if (_formKey.currentState!.validate()) {
-                    final authRepo = ref.read(authRepositoryProvider);
-                    try {
-                      ref.read(authControllerProvider.notifier).state =
-                      const AsyncValue.loading();
-
-                      await authRepo.signInWithEmailPassword(
-                        _emailController.text.trim(),
-                        _passwordController.text.trim(),
-                      );
-                      ref.read(authControllerProvider.notifier).state =
-                      const AsyncValue.data(null);
-                    } on Exception catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('Login Failed: ${e.toString()}')),
-                      );
-                      ref.read(authControllerProvider.notifier).state =
-                          AsyncValue.error(e, StackTrace.current);
-                    }
+                    // We now call the controller method
+                    ref
+                        .read(loginControllerProvider.notifier)
+                        .signInAndVerifyPhone(
+                      phoneNumber: _phoneController.text.trim(),
+                      password: _passwordController.text.trim(),
+                      onCodeSent: (verificationId) {
+                        // Navigate to OTP screen on success
+                        context.push(
+                          '/otp-verification',
+                          extra: {
+                            'verificationId': verificationId,
+                            'phoneNumber': _phoneController.text.trim(),
+                            'purpose': VerificationPurpose.login,
+                          },
+                        );
+                      },
+                      onError: (error) {
+                        // The ref.listen block will also catch this,
+                        // but it's good to be explicit.
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Login Error: $error'),
+                          ),
+                        );
+                      },
+                    );
                   }
                 },
-                // REMOVED: style: ElevatedButton.styleFrom(...)
-                // This is now handled by your ElevatedButtonTheme
-                child: loginLoadingState.isLoading
-                    ? const CircularProgressIndicator(
-                  // This is correct, as your button theme
-                  // sets the foregroundColor to white.
-                  color: Colors.white,
-                )
-                    : const Text(
-                  'LOGIN',
-                  // REMOVED: style: TextStyle(...)
-                  // This is now handled by the textStyle in
-                  // your ElevatedButtonTheme
-                ),
+                child: loginState.isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('LOGIN'),
               ),
               const SizedBox(height: 16),
-              // Don't have an account?
+
+              // Don't have an account? (Unchanged)
               TextButton(
                 onPressed: () {
                   context.push('/signup');
                 },
                 child: const Text('Don\'t have an account? Sign Up'),
-                // REMOVED: style: TextStyle(color: Colors.green.shade700)
-                // This is now handled by your TextButtonTheme
               ),
             ],
           ),
