@@ -23,51 +23,40 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/login',
     debugLogDiagnostics: true,
-
-    // Listen to auth state changes
     refreshListenable: GoRouterRefreshStream(
       FirebaseAuth.instance.authStateChanges(),
     ),
-
     redirect: (context, state) {
       final isAuth = authState.asData?.value != null;
-
       final authRoutes = [
         '/login',
         '/signup',
         '/forgot-password',
         '/otp-verification'
       ];
-
-      final isLoggingIn = authRoutes.contains(state.matchedLocation);
-
-      // Special case for reset password screen
-      final isResettingPassword = state.matchedLocation == '/reset-password';
-
-      if (!isAuth && !isLoggingIn && !isResettingPassword) {
-        // User not logged in and not on an auth route OR reset route
-        // → redirect to login
-        return '/login';
+      final onAuthRoute = authRoutes.contains(state.matchedLocation);
+      final onResetRoute = state.matchedLocation == '/reset-password';
+      if (isAuth) {
+        if (onAuthRoute) {
+          return '/home';
+        }
+        return null;
       }
-
-      if (isAuth && isLoggingIn) {
-        // User logged in but on an auth screen
-        if(isResettingPassword){
+      // this was the flawed code, because isloggingin and isresettingpassword were nested like suppose if person is resetting then he will be !islogginingin that means the if condition will terminate and return /login route even if he is resetting password
+      // if (isAuth && isLoggingIn) {
+      //   if(isResettingPassword){
+      //     return null;
+      //   }
+      //   return '/home';
+      // }
+      if (!isAuth) {
+        if (onAuthRoute || onResetRoute) {
           return null;
         }
-        // → redirect to home
-        return '/home';
-      }
-
-      if (!isAuth && isResettingPassword) {
-        // User is NOT logged in (e.g., timed out) but trying to access reset password
-        // → send to login
         return '/login';
       }
-
-      return null; // stay on current route
+      return null;
     },
-
     routes: [
       GoRoute(
         path: '/home',

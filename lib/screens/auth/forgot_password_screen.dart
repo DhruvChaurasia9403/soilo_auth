@@ -172,7 +172,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       'You will be temporarily signed in to reset your password after verifying the code.',
                       style: theme.textTheme.bodySmall?.copyWith(
                         // Ensure text is legible on both light/dark backgrounds
-                        color: themeConfig.textColor.withOpacity(0.7),
+                        color: themeConfig.textColor.withAlpha(200),
                       ),
                       textAlign: TextAlign.center,
                     ),
