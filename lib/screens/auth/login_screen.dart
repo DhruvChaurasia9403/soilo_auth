@@ -87,7 +87,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 const SizedBox(height: 24),
 
-                _buildSocialLogin(context, loginState),
+                // _buildSocialLogin(context, loginState),
 
               ],
             ).animate().fadeIn(duration: 500.ms),
@@ -196,33 +196,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildSocialLogin(BuildContext context, AsyncValue<dynamic> state) {
-    return Column(
-      children: [
-        const Row(
-          children: [
-            Expanded(child: Divider()),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text('OR'),
-            ),
-            Expanded(child: Divider()),
-          ],
-        ),
-        const SizedBox(height: 24),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            icon: const Icon(Icons.g_mobiledata, color: Colors.red, size: 24),
-            label: const Text('Continue with Google'),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Google Login Clicked'))
-              );
-            },
-          ),
-        ),
-      ],
-    ).animate().fadeIn(delay: 500.ms);
-  }
+  // Widget _buildSocialLogin(BuildContext context, AsyncValue<dynamic> state) {
+  //   return Column(
+  //     children: [
+  //       const Row(
+  //         children: [
+  //           Expanded(child: Divider()),
+  //           Padding(
+  //             padding: EdgeInsets.symmetric(horizontal: 8.0),
+  //             child: Text('OR'),
+  //           ),
+  //           Expanded(child: Divider()),
+  //         ],
+  //       ),
+  //       const SizedBox(height: 24),
+  //       // SizedBox(
+  //       //   width: double.infinity,
+  //       //   child: OutlinedButton.icon(
+  //       //     icon: const Icon(Icons.g_mobiledata, color: Colors.red, size: 24),
+  //       //     label: const Text('Continue with Google'),
+  //       //     onPressed: () {
+  //       //       ScaffoldMessenger.of(context).showSnackBar(
+  //       //           const SnackBar(content: Text('Google Login Clicked'))
+  //       //       );
+  //       //     },
+  //       //   ),
+  //       // ),
+  //     ],
+  //   ).animate().fadeIn(delay: 500.ms);
+  // }
 }

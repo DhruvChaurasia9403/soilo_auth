@@ -27,6 +27,7 @@ class MyApp extends ConsumerWidget {
 
     return MaterialApp.router(
       title: 'Soilo Auth App',
+
       debugShowCheckedModeBanner: false,
       theme: AppThemes.light,
       darkTheme: AppThemes.dark, // 👈 add dark mode

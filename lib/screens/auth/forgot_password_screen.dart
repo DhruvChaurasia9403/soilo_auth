@@ -65,7 +65,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   // --- Header Icon ---
                   Icon(
                     Icons.lock_open_outlined, // Indicates "unlocking" account
-                    size: 64,
+                    size: 44,
                     color: themeConfig.primaryColor,
                   ),
                   const SizedBox(height: 16),
@@ -73,7 +73,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   // --- Headings ---
                   Text(
                     'Forgot Password?',
-                    style: theme.textTheme.headlineMedium,
+                    style: theme.textTheme.headlineMedium!.copyWith(fontSize: 23),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
