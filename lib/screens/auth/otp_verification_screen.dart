@@ -4,7 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth/signup_controller.dart';
 import '../../providers/auth/login_controller.dart';
-import '../../providers/auth/forgot_password_controller.dart'; // For ThemeConfig extension
+import '../../providers/auth/forgot_password_controller.dart';
 import '../../routes/router.dart';
 import '../../themes/app_factory.dart';
 import 'signup_screen.dart' show VerificationPurpose;
@@ -13,12 +13,14 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
   final String verificationId;
   final String phoneNumber;
   final VerificationPurpose purpose;
+  final String? password; // 👈 Added password field
 
   const OtpVerificationScreen({
     super.key,
     required this.verificationId,
     required this.phoneNumber,
     required this.purpose,
+    this.password, // 👈 Accept it in constructor
   });
 
   @override
@@ -66,13 +68,25 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               .read(signUpControllerProvider.notifier)
               .completeSignUpWithOtp(widget.verificationId, otp);
           break;
+
         case VerificationPurpose.login:
-          ref
-              .read(loginControllerProvider.notifier)
-              .completeLoginWithOtp(widget.verificationId, otp);
+        // 👈 USE THE PASSWORD HERE FOR FINAL LOGIN
+          if (widget.password != null) {
+            ref
+                .read(loginControllerProvider.notifier)
+                .completeLoginWithOtp(
+                verificationId: widget.verificationId,
+                smsCode: otp,
+                password: widget.password!
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Error: Password missing for final login.'))
+            );
+          }
           break;
+
         case VerificationPurpose.passwordReset:
-          // ref.read(isAuthFlowInProgressProvider.notifier).setFlow(true);
           ref
               .read(forgotPasswordControllerProvider.notifier)
               .verifyOtpAndSignIn(widget.verificationId, otp);
@@ -128,12 +142,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.error.toString())));
         }
         if (state.hasValue && state.value == null) {
-          // Success: signed in for reset
           context.go('/reset-password');
         }
       },
     );
-    // (Add other listeners here if needed, kept short for brevity)
 
     final isLoading = _isLoading(ref);
     final theme = Theme.of(context);
@@ -166,7 +178,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 const SizedBox(height: 24),
                 Text(
                   'OTP Verification',
-                  style: theme.textTheme.headlineMedium, // Uses factory font
+                  style: theme.textTheme.headlineMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
@@ -186,10 +198,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                         keyboardType: TextInputType.number,
                         maxLength: 6,
                         textAlign: TextAlign.center,
-                        // FIX: Use theme.textTheme instead of GoogleFonts
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontSize: 24,
-                          letterSpacing: 12, // Only override what's unique
+                          letterSpacing: 12,
                           color: themeConfig.textColor,
                         ),
                         decoration: InputDecoration(
@@ -220,7 +231,6 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                             ),
                           )
                               : const Text('VERIFY'),
-                          // Text style comes from ElevatedButtonTheme
                         ),
                       ),
                     ],
@@ -249,7 +259,6 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                       },
                       child: Text(
                         'Resend',
-                        // FIX: Use standard styles or copyWith
                         style: theme.textTheme.labelLarge?.copyWith(
                           color: _resendEnabled
                               ? theme.primaryColor

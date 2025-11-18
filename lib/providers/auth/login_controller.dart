@@ -1,4 +1,3 @@
-// lib/features/auth/login_controller.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../features/auth/auth_repository.dart';
@@ -24,28 +23,29 @@ class LoginController extends AsyncNotifier<String?> {
     _pendingPhone = phoneNumber;
 
     // 1. 🛑 SIGNAL ROUTER: "I am logging in, but don't go to Home yet."
-    // We set this BEFORE the password check so the router doesn't redirect
-    // immediately upon successful password login.
     ref.read(isAuthFlowInProgressProvider.notifier).setFlow(true);
 
     try {
       // 2. 🔐 PASSWORD CHECK (Pseudo-Email Strategy)
       // We check the password against Firebase BEFORE sending SMS.
-      // This saves SMS costs and prevents spam.
       final pseudoEmail = '$phoneNumber@soilo.app';
 
+      // A. Sign in to validate password
       await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: pseudoEmail,
           password: password
       );
 
+      // B. 🛑 IMMEDIATE SIGN OUT (The Fix)
+      // We sign out so if the app is killed here, the user is NOT logged in.
+      // This forces them to restart the flow if they quit before OTP.
+      await FirebaseAuth.instance.signOut();
+
       // 3. 📨 SEND OTP (2FA)
-      // If we reached here, Password was correct. Now verify the device.
       await authRepository.verifyPhoneNumber(
         phoneNumber,
         verificationFailed: (e) {
-          // If SMS fails, sign out immediately so they aren't left logged in
-          FirebaseAuth.instance.signOut();
+          // Reset flow if verification fails
           ref.read(isAuthFlowInProgressProvider.notifier).setFlow(false);
 
           final errorMsg = e.message ?? 'Phone verification failed.';
@@ -63,11 +63,9 @@ class LoginController extends AsyncNotifier<String?> {
 
     } on FirebaseAuthException catch (e) {
       // Authentication failed (Wrong password or User not found)
-      // Ensure we are signed out and reset flow
       FirebaseAuth.instance.signOut();
       ref.read(isAuthFlowInProgressProvider.notifier).setFlow(false);
 
-      // Provide user-friendly error messages
       String msg = e.message ?? 'Login failed';
       if (e.code == 'wrong-password') msg = 'Incorrect Password.';
       if (e.code == 'user-not-found') msg = 'Account not found.';
@@ -83,32 +81,42 @@ class LoginController extends AsyncNotifier<String?> {
   }
 
   /// Step 2: after OTP entered — verify the phone credential
-  Future<void> completeLoginWithOtp(String verificationId, String smsCode) async {
+  /// We now need the PASSWORD here to sign them in for real.
+  Future<void> completeLoginWithOtp({
+    required String verificationId,
+    required String smsCode,
+    required String password, // 👈 New Argument
+  }) async {
     state = const AsyncValue.loading();
 
     try {
-      // Create the Phone Credential
-      final credential = PhoneAuthProvider.credential(
-          verificationId: verificationId,
-          smsCode: smsCode
+      // 1. Re-Authenticate with Password (since we signed out in Step 1)
+      // We know _pendingPhone is set from Step 1
+      if (_pendingPhone == null) throw Exception("Session expired. Please login again.");
+
+      final pseudoEmail = '$_pendingPhone@soilo.app';
+
+      // This performs the REAL, Persistent login
+      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: pseudoEmail,
+          password: password
       );
 
-      final user = FirebaseAuth.instance.currentUser;
+      final user = userCredential.user;
 
+      // 2. Verify/Link Phone (2FA check)
+      // This proves they have the device
       if (user != null) {
-        // We are already signed in via Password (from Step 1).
-        // Now we update/link the phone number to prove ownership of the device.
-        // This acts as the "2nd Factor" verification.
+        final credential = PhoneAuthProvider.credential(
+            verificationId: verificationId,
+            smsCode: smsCode
+        );
+        // Update the phone number to link this specific OTP session
+        // (or just to verify the credential is valid)
         await user.updatePhoneNumber(credential);
-      } else {
-        // Edge case: User somehow lost session between Step 1 and 2.
-        // Fallback to standard sign in.
-        final authRepository = ref.read(authRepositoryProvider);
-        await authRepository.signInWithPhoneNumberAndOtp(verificationId, smsCode);
       }
 
       // 🎉 SUCCESS
-      // Clear the pending data
       _pendingPhone = null;
 
       // Turn off the flow flag so the Router finally redirects to /home
@@ -117,8 +125,7 @@ class LoginController extends AsyncNotifier<String?> {
       state = const AsyncValue.data(null);
 
     } on FirebaseAuthException catch (e) {
-      // If OTP failed, do NOT sign out immediately?
-      // Actually, yes, strictly speaking 2FA failed, so session is invalid.
+      // If OTP failed, ensure we stay signed out
       await FirebaseAuth.instance.signOut();
       ref.read(isAuthFlowInProgressProvider.notifier).setFlow(false);
 

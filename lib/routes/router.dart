@@ -32,7 +32,7 @@ NotifierProvider<AuthFlowNotifier, bool>(() {
   return AuthFlowNotifier();
 });
 
-// --- 3. Router Notifier (The Fix) ---
+// --- 3. Router Notifier ---
 class RouterNotifier extends ChangeNotifier {
   final Ref _ref;
 
@@ -53,9 +53,6 @@ class RouterNotifier extends ChangeNotifier {
 
     final isAuth = authState.asData?.value != null;
     final location = state.matchedLocation;
-
-    // Log for debugging
-    // print("Router Redir: Auth=$isAuth, Flow=$isFlowInProgress, Loc=$location");
 
     // 1. PRIORITY: If flow is in progress, ALLOW EVERYTHING.
     if (isFlowInProgress) return null;
@@ -81,9 +78,8 @@ class RouterNotifier extends ChangeNotifier {
 
     // 3. AUTHENTICATED LOGIC
     if (isAuth) {
-      // If user is logged in but trying to access Login/Signup/Forgot, send to Home.
-      // EXCEPTION: Allow Reset Password (because they just verified OTP to get there)
-      // EXCEPTION: Allow OTP Verification (if they are finishing signup flow)
+      // If user is logged in, they are fully verified (because of our Controller fix).
+      // So redirect them to home if they try to access auth pages.
       if (isAuthRoute && !isResetRoute && !isOtpRoute) {
         return '/home';
       }
@@ -133,6 +129,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 
           final verificationId = extra?['verificationId'] as String? ?? '';
           final phoneNumber = extra?['phoneNumber'] as String? ?? '';
+          // Extract Password passed from Login Screen
+          final password = extra?['password'] as String?;
 
           if (verificationId.isEmpty) {
             return const LoginScreen();
@@ -142,6 +140,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             verificationId: verificationId,
             phoneNumber: phoneNumber,
             purpose: purpose,
+            password: password, // Pass it to the screen
           );
         },
       ),

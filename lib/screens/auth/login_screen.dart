@@ -1,11 +1,10 @@
 import 'package:checking/screens/auth/signup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart'; // 👈 Needed for your design
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth/login_controller.dart';
 import '../../themes/app_factory.dart';
- // To access gradient colors
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -30,12 +29,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginControllerProvider);
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
-    // Get gradient colors exactly like your design code logic
-    // (We prepared these in app_themes.dart to match your logic)
     final ThemeConfig themeConfig = Theme.of(context).extension<ThemeConfig>()!;
-
     final gradientStart = themeConfig.gradientStart;
     final gradientEnd = themeConfig.gradientEnd;
 
@@ -58,7 +53,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          // 👈 Gradient logic from your design code
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -71,15 +65,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // 1. Icon
                 Icon(
-                  Icons.eco_outlined, // 👈 Icon from your design
+                  Icons.eco_outlined,
                   size: 64,
                   color: theme.primaryColor,
                 ),
                 const SizedBox(height: 16),
 
-                // 2. Welcome Text
                 Text(
                   'Welcome to Soilo',
                   style: theme.textTheme.headlineMedium,
@@ -89,18 +81,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   style: theme.textTheme.titleMedium,
                 ),
 
-                const SizedBox(height: 40), // 👈 Spacing from your design
+                const SizedBox(height: 40),
 
-                // 3. Form with Animation
                 _buildForm(context, loginState),
 
                 const SizedBox(height: 24),
 
-                // 4. Social Login with Animation
                 _buildSocialLogin(context, loginState),
 
               ],
-            ).animate().fadeIn(duration: 500.ms), // 👈 Animation from your design
+            ).animate().fadeIn(duration: 500.ms),
           ),
         ),
       ),
@@ -117,7 +107,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             keyboardType: TextInputType.phone,
             decoration: const InputDecoration(
               labelText: 'Phone Number',
-              prefixIcon: Icon(Icons.phone), // Used Phone icon as per logic requirement
+              prefixIcon: Icon(Icons.phone),
             ),
             validator: (value) {
               if (value == null || value.isEmpty || value.length < 10) {
@@ -171,19 +161,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           'verificationId': verificationId,
                           'phoneNumber': _phoneController.text.trim(),
                           'purpose': VerificationPurpose.login,
+                          // 👇 PASS PASSWORD TO OTP SCREEN
+                          'password': _passwordController.text.trim(),
                         },
                       );
                     },
                     onError: (error) {/* Handled by listener */},
                   );
-                  // context.push(
-                  //   '/otp-verification',
-                  //   extra: {
-                  //     'verificationId': 'test_verification_id', // 👈 Needs a non-empty string
-                  //     'phoneNumber': _phoneController.text.trim(),
-                  //     'purpose': VerificationPurpose.login,
-                  //   },
-                  // );
                 }
               },
               child: loginState.isLoading
@@ -196,8 +180,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
 
-          // Switch Mode / Forgot Password
-          // Adapted to your navigation flow (Forgot Password)
           TextButton(
             onPressed: () => context.push('/forgot-password'),
             child: const Text("Forgot Password?"),
@@ -207,7 +189,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: const Text("Don't have an account? Sign Up"),
           ),
         ]
-            .animate(interval: 100.ms) // 👈 Staggered animation from your design
+            .animate(interval: 100.ms)
             .slideY(begin: 0.5, end: 0, curve: Curves.easeOutCubic)
             .fadeIn(),
       ),
@@ -231,19 +213,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            // You need to add this asset or use an Icon(Icons.g_mobiledata) temporarily
             icon: const Icon(Icons.g_mobiledata, color: Colors.red, size: 24),
             label: const Text('Continue with Google'),
             onPressed: () {
-              // Google Login Logic
               ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Google Login Clicked'))
               );
             },
-            // Style is handled by OutlinedButtonThemeData in factory
           ),
         ),
       ],
-    ).animate().fadeIn(delay: 500.ms); // 👈 Delayed animation from your design
+    ).animate().fadeIn(delay: 500.ms);
   }
 }
