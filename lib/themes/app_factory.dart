@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// UPDATED: Extends ThemeExtension so we can retrieve it in LoginScreen
 class ThemeConfig extends ThemeExtension<ThemeConfig> {
   final Color primaryColor;
   final Color accentColor;
@@ -90,10 +89,10 @@ class ThemeConfig extends ThemeExtension<ThemeConfig> {
     );
   }
 
-  // Simple lerp that switches themes instantly (sufficient for Login)
+  // FIXED: Changed parameter type to 'covariant ThemeConfig?' to match Flutter requirements
   @override
-  ThemeConfig lerp(ThemeExtension<ThemeConfig>? other, double t) {
-    if (other is! ThemeConfig) return this;
+  ThemeConfig lerp(covariant ThemeConfig? other, double t) {
+    if (other == null) return this;
     return t < 0.5 ? this : other;
   }
 }
@@ -106,14 +105,21 @@ class ThemeFactory {
   ThemeData createTheme() {
     final brightness = config.isDark ? Brightness.dark : Brightness.light;
 
-    final ColorScheme scheme = ColorScheme.fromSeed(
+    // Create base scheme
+    final ColorScheme baseScheme = ColorScheme.fromSeed(
       seedColor: config.primaryColor,
       brightness: brightness,
       error: config.errorColor,
       secondary: config.accentColor,
     );
 
-    final TextTheme baseTextTheme = GoogleFonts.poppinsTextTheme(
+    // Apply surface color override safely
+    final ColorScheme scheme = baseScheme.copyWith(
+      surface: config.isDark ? const Color(0xFF152922) : Colors.white,
+    );
+
+    // --- TYPOGRAPHY STRATEGY ---
+    final TextTheme baseTextTheme = GoogleFonts.mulishTextTheme(
       config.isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme,
     );
 
@@ -121,70 +127,90 @@ class ThemeFactory {
       bodyColor: config.textColor,
       displayColor: config.textColor,
     ).copyWith(
-      headlineMedium: baseTextTheme.headlineMedium?.copyWith(
-        fontWeight: FontWeight.bold,
+      displayMedium: GoogleFonts.playfairDisplay(
+        fontSize: 48,
+        fontWeight: FontWeight.w700,
         color: config.primaryColor,
       ),
-      titleMedium: baseTextTheme.titleMedium?.copyWith(
-        color: config.isDark ? Colors.grey[300] : const Color(0xFF1C2A3A),
+      headlineMedium: GoogleFonts.playfairDisplay(
+        fontWeight: FontWeight.w600,
+        color: config.primaryColor,
+        letterSpacing: -0.5,
+      ),
+      headlineSmall: GoogleFonts.playfairDisplay(
+        fontWeight: FontWeight.w600,
+        color: config.textColor,
       ),
       titleLarge: baseTextTheme.titleLarge?.copyWith(
         fontSize: 20,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         color: config.textColor,
+        letterSpacing: 0.2,
+      ),
+      titleMedium: baseTextTheme.titleMedium?.copyWith(
+        fontSize: 16,
+        color: config.isDark ? Colors.grey[300] : const Color(0xFF3A4E44),
+        fontWeight: FontWeight.w600,
+      ),
+      labelLarge: baseTextTheme.labelLarge?.copyWith(
+        letterSpacing: 1.2,
+        fontWeight: FontWeight.w700,
+        fontSize: 14,
       ),
     );
 
     return ThemeData(
-      useMaterial3: false,
+      useMaterial3: true,
       brightness: brightness,
       colorScheme: scheme,
       primaryColor: config.primaryColor,
       scaffoldBackgroundColor: config.scaffoldBg,
       textTheme: customTextTheme,
 
-      // -------------------------------------------------------
-      // CRITICAL FIX: Register the config as an extension here
-      // -------------------------------------------------------
-      extensions: [
-        config,
-      ],
+      extensions: [config],
 
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         iconTheme: IconThemeData(color: config.textColor),
-        titleTextStyle: customTextTheme.titleLarge,
+        titleTextStyle: GoogleFonts.playfairDisplay(
+          fontSize: 24,
+          fontWeight: FontWeight.w600,
+          color: config.textColor,
+          letterSpacing: -0.5,
+        ),
+        surfaceTintColor: Colors.transparent,
       ),
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: config.inputFillColor,
-        labelStyle: TextStyle(color: config.inputLabel),
+        labelStyle: TextStyle(color: config.inputLabel, fontSize: 14),
         floatingLabelStyle: TextStyle(
           color: config.inputFloatingLabel,
           fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
         ),
         prefixIconColor: config.inputPrefixIcon,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: config.inputBorder, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: config.inputBorder, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
             color: config.inputFocusedBorder,
-            width: 2,
+            width: 1.5,
           ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: config.errorColor),
         ),
       ),
@@ -193,21 +219,32 @@ class ThemeFactory {
         style: ElevatedButton.styleFrom(
           backgroundColor: config.primaryColor,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 32),
+          elevation: 0,
+          shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
           ),
-          elevation: 4,
-          shadowColor: config.primaryColor.withOpacity(0.3),
+          textStyle: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.0,
+          ),
         ),
       ),
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          side: BorderSide(color: Colors.grey.shade300),
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 32),
+          foregroundColor: config.primaryColor,
+          side: BorderSide(color: config.primaryColor.withOpacity(0.2), width: 1),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.0,
           ),
         ),
       ),
@@ -217,10 +254,27 @@ class ThemeFactory {
       ),
 
       cardTheme: CardThemeData(
-        elevation: 2,
-        color: config.isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        shadowColor: config.primaryColor.withOpacity(0.1),
+        elevation: 0,
+        color: config.isDark ? const Color(0xFF152922) : Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: config.isDark ? Colors.transparent : const Color(0xFFE6E8E6),
+            width: 1,
+          ),
+        ),
+        margin: EdgeInsets.zero,
+      ),
+
+      dialogTheme: DialogThemeData(
+        backgroundColor: config.isDark ? const Color(0xFF152922) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        titleTextStyle: GoogleFonts.playfairDisplay(
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          color: config.textColor,
+        ),
       ),
     );
   }
