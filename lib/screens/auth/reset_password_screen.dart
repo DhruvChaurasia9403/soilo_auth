@@ -112,7 +112,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   // --- Header Icon ---
                   Icon(
                     Icons.lock_reset,
-                    size: 64,
+                    size: 44,
                     color: themeConfig.primaryColor,
                   ),
                   const SizedBox(height: 16),

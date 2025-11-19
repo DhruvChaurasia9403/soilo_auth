@@ -2,100 +2,91 @@ import 'package:flutter/material.dart';
 import 'app_factory.dart';
 
 class AppThemes {
-  // --- Premium Green & Gold Palette ---
-  // Deep, rich emerald for a sense of stability and wealth
-  static const Color primary = Color(0xFF0F4C3A);
+  // ===========================================================================
+  // LIGHT THEME PALETTE (New: Green, Expensive, Light)
+  // ===========================================================================
+  static const Color _lightPrimary = Color(0xFF2D6A4F); // "Forest Fern" - Rich & Natural
+  static const Color _lightAccent = Color(0xFF52B788);  // "Fresh Mint"
+  static const Color _lightSecondary = Color(0xFF74C69D);
 
-  // Lighter sage/forest tone for secondary elements
-  static const Color primaryLight = Color(0xFF37745B);
+  static const Color _lightBg = Color(0xFFF7F9F8); // "Mint Cream" - Premium Off-White
+  static const Color _lightText = Color(0xFF1B4332); // Deep Green-Black text
 
-  // Matte Gold for a luxurious accent without being flashy
-  static const Color accent = Color(0xFFC1A150);
-
-  // --- Backgrounds ---
-  // Very subtle mint-tinted white for a fresh, airy feel
-  static const Color _lightScaffoldBg = Color(0xFFF8FBF9);
-  // Rich, dark charcoal green for dark mode (optional, but included)
-  static const Color _darkScaffoldBg = Color(0xFF051F18);
-
-  // --- Inputs ---
-  // Pure white inputs with subtle borders look more premium than grey filled ones
   static const Color _lightInputFill = Colors.white;
-  static final Color _darkInputFill = Colors.white.withOpacity(0.05);
+  static const Color _lightInputBorder = Color(0xFFD8E6DE); // Subtle green-grey border
 
-  // --- Text Colors ---
-  static const Color _lightText = Color(0xFF1A2E26); // Dark green-grey, softer than black
-  static const Color _darkText = Color(0xFFE2E8E5);
+  // ===========================================================================
+  // DARK THEME PALETTE (Original: Deep Teal & Amber)
+  // ===========================================================================
+  static const Color _darkPrimary = Color(0xFF004D40); // Original Deep Teal
+  static const Color _darkPrimaryLight = Color(0xFF00796B);
+  static const Color _darkAccent = Color(0xFFFFA726); // Original Warm Amber
 
-  // --- Gradients ---
-  // Very subtle top-down gradient for the background
-  static final Color _lightGradientStart = primary.withOpacity(0.05);
-  static const Color _lightGradientEnd = _lightScaffoldBg;
+  static const Color _darkBg = Color(0xFF121212); // Original Dark Grey
+  static const Color _darkText = Color(0xFFE0E0E0); // Original Off-White text
 
-  static final Color _darkGradientStart = primary.withOpacity(0.3);
-  static const Color _darkGradientEnd = _darkScaffoldBg;
+  static final Color _darkInputFill = Colors.grey.shade800.withOpacity(0.5);
+
 
   // ----------------------------------------------------------------
-  // LIGHT THEME (Premium)
+  // LIGHT THEME CONFIGURATION
   // ----------------------------------------------------------------
   static ThemeData light = ThemeFactory(
     config: ThemeConfig(
-      primaryColor: primary,
-      accentColor: accent,
-      lightAccent: primaryLight,
+      primaryColor: _lightPrimary,
+      accentColor: _lightAccent,
+      lightAccent: _lightSecondary,
       isDark: false,
 
-      // Clean, expensive looking background
-      scaffoldBg: _lightScaffoldBg,
+      scaffoldBg: _lightBg,
       appBarBg: Colors.transparent,
       textColor: _lightText,
 
-      // Sleek Inputs
+      // Premium Light Inputs
       inputFillColor: _lightInputFill,
-      inputLabel: Color(0xFF8DA696), // Muted sage text
-      inputFloatingLabel: primary,
-      inputPrefixIcon: accent, // Gold icons
-      inputBorder: Color(0xFFE0ECE5), // Very light green border
-      inputFocusedBorder: primary,
+      inputLabel: Color(0xFFA4C3B2),
+      inputFloatingLabel: _lightPrimary,
+      inputPrefixIcon: _lightSecondary,
+      inputBorder: _lightInputBorder,
+      inputFocusedBorder: _lightPrimary,
 
-      // Feedback
-      errorColor: Color(0xFFB00020),
-      progressColor: accent,
-      snackBarBg: primary,
+      errorColor: Color(0xFFD32F2F),
+      progressColor: _lightAccent,
+      snackBarBg: _lightPrimary,
 
-      // Ambient Gradient
-      gradientStart: _lightGradientStart,
-      gradientEnd: _lightGradientEnd,
+      gradientStart: _lightPrimary.withOpacity(0.08),
+      gradientEnd: _lightBg,
     ),
   ).createTheme();
 
   // ----------------------------------------------------------------
-  // DARK THEME (Luxury Night)
+  // DARK THEME CONFIGURATION (Restored to Original)
   // ----------------------------------------------------------------
   static ThemeData dark = ThemeFactory(
     config: ThemeConfig(
-      primaryColor: primaryLight,
-      accentColor: accent,
-      lightAccent: primary,
+      primaryColor: _darkPrimaryLight, // Dark mode uses lighter teal (from original)
+      accentColor: _darkAccent,
+      lightAccent: _darkPrimary,
       isDark: true,
 
-      scaffoldBg: _darkScaffoldBg,
+      scaffoldBg: _darkBg,
       appBarBg: Colors.transparent,
       textColor: _darkText,
 
+      // Original Dark Inputs
       inputFillColor: _darkInputFill,
-      inputLabel: Colors.white38,
-      inputFloatingLabel: accent,
-      inputPrefixIcon: accent,
-      inputBorder: Colors.white10,
-      inputFocusedBorder: accent,
+      inputLabel: Colors.grey,
+      inputFloatingLabel: _darkPrimaryLight,
+      inputPrefixIcon: _darkText,
+      inputBorder: Colors.transparent,
+      inputFocusedBorder: _darkPrimaryLight,
 
-      errorColor: Color(0xFFCF6679),
-      progressColor: accent,
-      snackBarBg: Color(0xFF0F2920),
+      errorColor: Colors.red.shade400,
+      progressColor: _darkPrimaryLight,
+      snackBarBg: const Color(0xFF1E1E1E),
 
-      gradientStart: _darkGradientStart,
-      gradientEnd: _darkGradientEnd,
+      gradientStart: _darkPrimaryLight.withOpacity(0.2),
+      gradientEnd: _darkBg,
     ),
   ).createTheme();
 }

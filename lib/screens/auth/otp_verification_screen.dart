@@ -232,7 +232,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               children: [
                 Icon(
                   Icons.phonelink_lock,
-                  size: 64,
+                  size: 44,
                   color: theme.primaryColor,
                 ),
                 const SizedBox(height: 24),
@@ -264,7 +264,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                           color: themeConfig.textColor,
                         ),
                         decoration: InputDecoration(
-                          labelText: 'OTP Code',
+                          labelText: 'Enter Code',
                           counterText: "",
                           floatingLabelAlignment: FloatingLabelAlignment.center,
                           fillColor: themeConfig.inputFillColor,

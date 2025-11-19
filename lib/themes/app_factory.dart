@@ -89,7 +89,7 @@ class ThemeConfig extends ThemeExtension<ThemeConfig> {
     );
   }
 
-  // FIXED: Changed parameter type to 'covariant ThemeConfig?' to match Flutter requirements
+  // --- ERROR FIXED HERE: Added 'covariant' ---
   @override
   ThemeConfig lerp(covariant ThemeConfig? other, double t) {
     if (other == null) return this;
@@ -105,20 +105,14 @@ class ThemeFactory {
   ThemeData createTheme() {
     final brightness = config.isDark ? Brightness.dark : Brightness.light;
 
-    // Create base scheme
-    final ColorScheme baseScheme = ColorScheme.fromSeed(
+    final ColorScheme scheme = ColorScheme.fromSeed(
       seedColor: config.primaryColor,
       brightness: brightness,
       error: config.errorColor,
       secondary: config.accentColor,
+      surface: config.isDark ? const Color(0xFF121212) : config.scaffoldBg,
     );
 
-    // Apply surface color override safely
-    final ColorScheme scheme = baseScheme.copyWith(
-      surface: config.isDark ? const Color(0xFF152922) : Colors.white,
-    );
-
-    // --- TYPOGRAPHY STRATEGY ---
     final TextTheme baseTextTheme = GoogleFonts.mulishTextTheme(
       config.isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme,
     );
@@ -127,6 +121,7 @@ class ThemeFactory {
       bodyColor: config.textColor,
       displayColor: config.textColor,
     ).copyWith(
+      // Expensive Looking Headers (Serif)
       displayMedium: GoogleFonts.playfairDisplay(
         fontSize: 48,
         fontWeight: FontWeight.w700,
@@ -151,11 +146,6 @@ class ThemeFactory {
         fontSize: 16,
         color: config.isDark ? Colors.grey[300] : const Color(0xFF3A4E44),
         fontWeight: FontWeight.w600,
-      ),
-      labelLarge: baseTextTheme.labelLarge?.copyWith(
-        letterSpacing: 1.2,
-        fontWeight: FontWeight.w700,
-        fontSize: 14,
       ),
     );
 
@@ -196,11 +186,17 @@ class ThemeFactory {
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: config.inputBorder, width: 1),
+          borderSide: BorderSide(
+              color: config.inputBorder,
+              width: config.inputBorder == Colors.transparent ? 0 : 1
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: config.inputBorder, width: 1),
+          borderSide: BorderSide(
+              color: config.inputBorder,
+              width: config.inputBorder == Colors.transparent ? 0 : 1
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -256,7 +252,7 @@ class ThemeFactory {
 
       cardTheme: CardThemeData(
         elevation: 0,
-        color: config.isDark ? const Color(0xFF152922) : Colors.white,
+        color: config.isDark ? const Color(0xFF1E1E1E) : Colors.white,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -269,7 +265,7 @@ class ThemeFactory {
       ),
 
       dialogTheme: DialogThemeData(
-        backgroundColor: config.isDark ? const Color(0xFF152922) : Colors.white,
+        backgroundColor: config.isDark ? const Color(0xFF1E1E1E) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         titleTextStyle: GoogleFonts.playfairDisplay(
           fontSize: 22,

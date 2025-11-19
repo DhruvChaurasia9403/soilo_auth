@@ -66,7 +66,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 children: [
                   Icon(
                     Icons.person_add_outlined,
-                    size: 64,
+                    size: 44,
                     color: themeConfig.primaryColor,
                   ),
                   const SizedBox(height: 16),
@@ -77,7 +77,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Join our community today',
+                    'Welcome to Soilo!',
                     style: theme.textTheme.titleMedium,
                     textAlign: TextAlign.center,
                   ),
@@ -110,7 +110,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                           value: _selectedRole,
                           hint: const Text('Select Your Role'),
                           decoration: const InputDecoration(
-                            labelText: 'Role',
                             prefixIcon: Icon(Icons.work_outline),
                           ),
                           items: UserRole.values.map((role) {
