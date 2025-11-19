@@ -97,61 +97,61 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   }
   // Add this method to your state class
   Future<void> _onResendPressed() async {
-    setState(() {
-      _resendEnabled = false;
-      _secondsLeft = 30;
-    });
-    _startCountdown();
+    // Disable button immediately to prevent double clicks
+    setState(() => _resendEnabled = false);
+
+    // Helper to handle success
+    void handleSuccess(String newVerId) {
+      if (!mounted) return;
+      setState(() => _currentVerificationId = newVerId);
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Code resent successfully!')));
+      _startCountdown(); // 👈 Start timer ONLY after success
+    }
+
+    // Helper to handle error
+    void handleError(String err) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Resend failed: $err')));
+      _startCountdown(); // 👈 Start timer even on error so user can try again later
+    }
 
     try {
       switch (widget.purpose) {
         case VerificationPurpose.signUp:
-        // Implement SignUp resend if needed
+          await ref.read(signUpControllerProvider.notifier).resendOtp(
+            onCodeSent: handleSuccess,
+            onError: handleError,
+          );
           break;
 
         case VerificationPurpose.login:
           await ref.read(loginControllerProvider.notifier).sendOtpForLogin(
-              phoneNumber: widget.phoneNumber,
-              password: widget.password ?? '',
-              onCodeSent: (newVerId) {
-                // 👇 3. Update the ID when resend is successful
-                setState(() => _currentVerificationId = newVerId);
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Code resent successfully!'))
-                );
-              },
-              onError: (err) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Resend failed: $err'))
-                );
-              }
+            phoneNumber: widget.phoneNumber,
+            password: widget.password ?? '',
+            onCodeSent: handleSuccess,
+            onError: handleError,
           );
           break;
 
         case VerificationPurpose.passwordReset:
-          await ref.read(forgotPasswordControllerProvider.notifier).sendVerificationOtp(
-              phoneNumber: widget.phoneNumber,
-              onCodeSent: (newVerId) {
-                // 👇 3. Update the ID when resend is successful
-                setState(() => _currentVerificationId = newVerId);
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Code resent successfully!'))
-                );
-              },
-              onError: (err) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Resend failed: $err'))
-                );
-              }
+          await ref
+              .read(forgotPasswordControllerProvider.notifier)
+              .sendVerificationOtp(
+            phoneNumber: widget.phoneNumber,
+            onCodeSent: handleSuccess,
+            onError: handleError,
           );
           break;
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Resend error: $e'))
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Resend error: $e')));
+        // If immediate crash, re-enable button or start timer
+        setState(() => _resendEnabled = true);
+      }
     }
   }
 

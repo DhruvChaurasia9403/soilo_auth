@@ -25,14 +25,49 @@ class SignUpController extends AsyncNotifier<String?> {
     required Function(String verificationId) onCodeSent,
     required Function(String error) onError,
   }) async {
-    state = const AsyncValue.loading();
-    final authRepository = ref.read(authRepositoryProvider);
-
-    // store pending values so we can complete signup after OTP verification
+    // 1. Store pending values first
     _pendingFullName = fullName;
     _pendingPassword = password;
     _pendingPhone = phoneNumber;
     _pendingRole = role;
+
+    // 2. Call the shared verification method
+    await _startPhoneVerification(
+      phoneNumber: phoneNumber,
+      onCodeSent: onCodeSent,
+      onError: onError,
+    );
+  }
+
+  /// NEW: Resend OTP using stored pending phone number
+  Future<void> resendOtp({
+    required Function(String verificationId) onCodeSent,
+    required Function(String error) onError,
+  }) async {
+    // Guard: Ensure we have the phone number in memory
+    if (_pendingPhone == null) {
+      const errorMsg = "Session expired. Please restart the sign-up process.";
+      onError(errorMsg);
+      state = AsyncValue.error(errorMsg, StackTrace.current);
+      return;
+    }
+
+    // Call the shared verification method with the stored phone
+    await _startPhoneVerification(
+      phoneNumber: _pendingPhone!,
+      onCodeSent: onCodeSent,
+      onError: onError,
+    );
+  }
+
+  /// PRIVATE HELPER: Handles the actual Firebase verification logic
+  Future<void> _startPhoneVerification({
+    required String phoneNumber,
+    required Function(String verificationId) onCodeSent,
+    required Function(String error) onError,
+  }) async {
+    state = const AsyncValue.loading();
+    final authRepository = ref.read(authRepositoryProvider);
 
     try {
       await authRepository.verifyPhoneNumber(
@@ -43,12 +78,13 @@ class SignUpController extends AsyncNotifier<String?> {
           state = AsyncValue.error(errorMsg, StackTrace.current);
         },
         codeSent: (verificationId, resendToken) {
-          // store verificationId as state (OTP screen reads this)
           state = AsyncValue.data(verificationId);
           onCodeSent(verificationId);
         },
         codeAutoRetrievalTimeout: (verificationId) {
+          // Treat timeout as success for manual entry
           state = AsyncValue.data(verificationId);
+          // onCodeSent(verificationId);
         },
       );
     } on Exception catch (e) {
@@ -56,7 +92,6 @@ class SignUpController extends AsyncNotifier<String?> {
       state = AsyncValue.error(e, StackTrace.current);
     }
   }
-
   /// Step 2: after OTP entered — create Firebase user and link phone credential
   Future<void> completeSignUpWithOtp(String verificationId, String smsCode) async {
     state = const AsyncValue.loading();

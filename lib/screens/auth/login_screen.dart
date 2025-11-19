@@ -21,6 +21,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
+
   @override
   void dispose() {
     _phoneController.dispose();
@@ -140,7 +141,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         },
                       );
                     },
-                    onError: (error) {/* Handled by listener */},
+                    onError: (error) {
+                      /* Handled by listener */
+                    },
                   );
                 }
               },
@@ -148,7 +151,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ? const SizedBox(
                   height: 20,
                   width: 20,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                  child: CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 2)
               )
                   : const Text('Login'),
             ),
@@ -169,34 +173,4 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
     );
   }
-
-  // Widget _buildSocialLogin(BuildContext context, AsyncValue<dynamic> state) {
-  //   return Column(
-  //     children: [
-  //       const Row(
-  //         children: [
-  //           Expanded(child: Divider()),
-  //           Padding(
-  //             padding: EdgeInsets.symmetric(horizontal: 8.0),
-  //             child: Text('OR'),
-  //           ),
-  //           Expanded(child: Divider()),
-  //         ],
-  //       ),
-  //       const SizedBox(height: 24),
-  //       // SizedBox(
-  //       //   width: double.infinity,
-  //       //   child: OutlinedButton.icon(
-  //       //     icon: const Icon(Icons.g_mobiledata, color: Colors.red, size: 24),
-  //       //     label: const Text('Continue with Google'),
-  //       //     onPressed: () {
-  //       //       ScaffoldMessenger.of(context).showSnackBar(
-  //       //           const SnackBar(content: Text('Google Login Clicked'))
-  //       //       );
-  //       //     },
-  //       //   ),
-  //       // ),
-  //     ],
-  //   ).animate().fadeIn(delay: 500.ms);
-  // }
 }

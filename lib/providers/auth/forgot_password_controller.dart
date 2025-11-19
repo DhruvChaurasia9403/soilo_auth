@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/auth/auth_repository.dart';
+import '../reset_flow_provider.dart';
 
 // This controller will hold the verificationId
 class ForgotPasswordController extends AsyncNotifier<String?> {
@@ -34,6 +35,7 @@ class ForgotPasswordController extends AsyncNotifier<String?> {
         },
         codeAutoRetrievalTimeout: (verificationId) {
           state = AsyncValue.data(verificationId); // Keep verification ID
+          // onCodeSent(verificationId);
         },
       );
     } on Exception catch (e) {
@@ -51,8 +53,7 @@ class ForgotPasswordController extends AsyncNotifier<String?> {
       // Sign in with phone OTP. This authenticates the user
       // so they have permission to change their password.
       await authRepository.signInWithPhoneNumberAndOtp(verificationId, smsCode);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('pending_password_reset', true);
+      ref.read(resetFlowPersistenceProvider.notifier).setResetFlow(true);
       // Keep state data null but indicate success
       state = const AsyncValue.data(null);
     } on FirebaseAuthException catch (e) {

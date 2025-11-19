@@ -76,10 +76,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         if (!state.hasError && state.hasValue) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text('Password reset successfully. Please log in.')));
-          await ref.read(authControllerProvider.notifier).signOut();
-          if (context.mounted) {
-            context.go('/login');
-          }
+          // context.go('/login');
         }
       },
     );
