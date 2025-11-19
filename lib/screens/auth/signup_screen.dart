@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/common/password_input_field.dart';
+import '../../features/common/phone_input_field.dart';
 import '../../providers/auth/signup_controller.dart';
 import '../../features/auth/user_role.dart';
 import '../../features/utils/validators.dart';
@@ -98,22 +100,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                         const SizedBox(height: 16),
 
                         // Phone
-                        TextFormField(
+                        PhoneInputField(
                           controller: _phoneController,
-                          keyboardType: TextInputType.phone,
-                          decoration: const InputDecoration(
-                            labelText: 'Phone Number',
-                            prefixIcon: Icon(Icons.phone_outlined),
-                          ),
-                          validator: (value) {
-                            if (value == null ||
-                                value.isEmpty ||
-                                !value.startsWith('+') ||
-                                value.length < 10) {
-                              return 'Enter valid phone (+1...)';
-                            }
-                            return null;
-                          },
                         ),
                         const SizedBox(height: 16),
 
@@ -139,47 +127,18 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                         const SizedBox(height: 16),
 
                         // Password Field
-                        TextFormField(
+                        PasswordInputField(
                           controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: theme.hintColor,
-                              ),
-                              onPressed: () => setState(() =>
-                              _obscurePassword = !_obscurePassword),
-                            ),
-                          ),
-                          validator: (value) =>
-                              AppValidators.validatePassword(value),
+                          textInputAction: TextInputAction.next,
                         ),
                         const SizedBox(height: 16),
 
                         // Confirm Password Field
-                        TextFormField(
+                        PasswordInputField(
                           controller: _confirmPasswordController,
-                          obscureText: _obscureConfirmPassword,
-                          decoration: InputDecoration(
-                            labelText: 'Confirm Password',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureConfirmPassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: theme.hintColor,
-                              ),
-                              onPressed: () => setState(() =>
-                              _obscureConfirmPassword =
-                              !_obscureConfirmPassword),
-                            ),
-                          ),
+                          labelText: 'Confirm Password',
+                          textInputAction: TextInputAction.done,
+                          // Override the default validator to check matching
                           validator: (value) {
                             if (value != _passwordController.text) {
                               return 'Passwords do not match.';
@@ -192,7 +151,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                         // Sign Up Button
                         SizedBox(
                           width: double.infinity,
-                          height: 56,
                           child: ElevatedButton(
                             onPressed: signUpState.isLoading
                                 ? null
@@ -259,7 +217,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                               style: theme.textTheme.bodyMedium,
                             ),
                             TextButton(
-                              onPressed: () => context.push('/login'),
+                              onPressed: () => context.pop(),
                               child: const Text('Login'),
                             ),
                           ],

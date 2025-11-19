@@ -28,18 +28,15 @@ class LoginController extends AsyncNotifier<String?> {
     try {
       // 2. 🔐 PASSWORD CHECK (Pseudo-Email Strategy)
       // We check the password against Firebase BEFORE sending SMS.
-      final pseudoEmail = '$phoneNumber@soilo.app';
+
 
       // A. Sign in to validate password
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: pseudoEmail,
-          password: password
-      );
+      await authRepository.signInWithPhonePassword(phoneNumber, password);
 
       // B. 🛑 IMMEDIATE SIGN OUT (The Fix)
       // We sign out so if the app is killed here, the user is NOT logged in.
       // This forces them to restart the flow if they quit before OTP.
-      await FirebaseAuth.instance.signOut();
+      await authRepository.signOut();
 
       // 3. 📨 SEND OTP (2FA)
       await authRepository.verifyPhoneNumber(

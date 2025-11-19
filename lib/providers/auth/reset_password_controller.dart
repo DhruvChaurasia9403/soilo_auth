@@ -2,6 +2,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/auth/auth_repository.dart';
 
 class ResetPasswordController extends AsyncNotifier<void> {
@@ -16,6 +17,9 @@ class ResetPasswordController extends AsyncNotifier<void> {
     state = await AsyncValue.guard(
           () => authRepository.updateUserPassword(newPassword),
     );
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('pending_password_reset');
+    // await authRepository.signOut();
   }
 }
 

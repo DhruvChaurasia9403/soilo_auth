@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/common/password_input_field.dart';
+import '../../features/common/phone_input_field.dart';
 import '../../providers/auth/login_controller.dart';
 import '../../themes/app_factory.dart';
+import 'package:flutter/services.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -102,42 +105,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       key: _formKey,
       child: Column(
         children: [
-          TextFormField(
+          PhoneInputField(
             controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(
-              labelText: 'Phone Number',
-              prefixIcon: Icon(Icons.phone),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty || value.length < 10) {
-                return 'Enter valid phone';
-              }
-              return null;
-            },
           ),
           const SizedBox(height: 16),
-          TextFormField(
+          PasswordInputField(
             controller: _passwordController,
-            obscureText: _obscurePassword,
-            decoration: InputDecoration(
-              labelText: 'Password',
-              prefixIcon: Icon(Icons.lock_outline),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                  color: Colors.grey,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
-              ),
-            ),
-            validator: (value) => (value != null && value.length >= 6)
-                ? null
-                : 'Password must be 6+ chars',
+            textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: 24),
 

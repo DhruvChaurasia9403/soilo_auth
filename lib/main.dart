@@ -1,8 +1,10 @@
 import 'package:checking/routes/router.dart';
 import 'package:checking/themes/app_themes.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 
 
@@ -11,6 +13,17 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  final prefs = await SharedPreferences.getInstance();
+  final isPendingReset = prefs.getBool('pending_password_reset') ?? false;
+
+  if (isPendingReset) {
+    // The user killed the app while in the "Reset Password" flow.
+    // Their session is valid, but they shouldn't be in the app.
+    // Force Logout.
+    await FirebaseAuth.instance.signOut();
+    await prefs.remove('pending_password_reset'); // Clear flag
+    debugPrint("⚠️ Security: Cleared incomplete password reset session.");
+  }
   runApp(
     const ProviderScope(
       child: MyApp(),

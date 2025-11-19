@@ -219,7 +219,8 @@ class ThemeFactory {
         style: ElevatedButton.styleFrom(
           backgroundColor: config.primaryColor,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 32),
+          minimumSize: const Size.fromHeight(56),
+          padding: const EdgeInsets.symmetric(horizontal: 32),
           elevation: 0,
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(

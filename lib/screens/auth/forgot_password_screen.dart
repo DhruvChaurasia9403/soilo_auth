@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart'; // Required for animations
 import 'package:go_router/go_router.dart';
+import '../../features/common/phone_input_field.dart';
 import '../../providers/auth/forgot_password_controller.dart';
 import '../../themes/app_factory.dart'; // For ThemeConfig
 
@@ -90,28 +91,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        TextFormField(
+                        PhoneInputField(
                           controller: _phoneController,
-                          keyboardType: TextInputType.phone,
-                          decoration: const InputDecoration(
-                            labelText: 'Phone Number',
-                            hintText: 'e.g., +15551234567',
-                            prefixIcon: Icon(Icons.phone_outlined),
-                          ),
-                          validator: (value) {
-                            if (value == null ||
-                                value.isEmpty ||
-                                !value.startsWith('+') ||
-                                value.length < 10) {
-                              return 'Please enter a valid phone number with country code.';
-                            }
-                            return null;
-                          },
                         ),
                         const SizedBox(height: 24),
 
                         SizedBox(
-                          height: 56,
+                          width: double.infinity,
                           child: ElevatedButton(
                             onPressed: resetPasswordState.isLoading
                                 ? null

@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../providers/auth/signup_controller.dart';
 import '../../providers/auth/login_controller.dart';
 import '../../providers/auth/forgot_password_controller.dart';
-import '../../routes/router.dart';
 import '../../themes/app_factory.dart';
 import 'signup_screen.dart' show VerificationPurpose;
 
@@ -31,12 +30,14 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
 class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   final TextEditingController _otpController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  late String _currentVerificationId;
   int _secondsLeft = 30;
   bool _resendEnabled = false;
 
   @override
   void initState() {
     super.initState();
+    _currentVerificationId = widget.verificationId;
     _startCountdown();
   }
 
@@ -92,6 +93,65 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               .verifyOtpAndSignIn(widget.verificationId, otp);
           break;
       }
+    }
+  }
+  // Add this method to your state class
+  Future<void> _onResendPressed() async {
+    setState(() {
+      _resendEnabled = false;
+      _secondsLeft = 30;
+    });
+    _startCountdown();
+
+    try {
+      switch (widget.purpose) {
+        case VerificationPurpose.signUp:
+        // Implement SignUp resend if needed
+          break;
+
+        case VerificationPurpose.login:
+          await ref.read(loginControllerProvider.notifier).sendOtpForLogin(
+              phoneNumber: widget.phoneNumber,
+              password: widget.password ?? '',
+              onCodeSent: (newVerId) {
+                // 👇 3. Update the ID when resend is successful
+                setState(() => _currentVerificationId = newVerId);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Code resent successfully!'))
+                );
+              },
+              onError: (err) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Resend failed: $err'))
+                );
+              }
+          );
+          break;
+
+        case VerificationPurpose.passwordReset:
+          await ref.read(forgotPasswordControllerProvider.notifier).sendVerificationOtp(
+              phoneNumber: widget.phoneNumber,
+              onCodeSent: (newVerId) {
+                // 👇 3. Update the ID when resend is successful
+                setState(() => _currentVerificationId = newVerId);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Code resent successfully!'))
+                );
+              },
+              onError: (err) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Resend failed: $err'))
+                );
+              }
+          );
+          break;
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Resend error: $e'))
+      );
     }
   }
 
@@ -250,13 +310,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                     TextButton(
                       onPressed: isLoading || !_resendEnabled
                           ? null
-                          : () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Resend code requested')),
-                        );
-                        _startCountdown();
-                      },
+                          : _onResendPressed,
                       child: Text(
                         'Resend',
                         style: theme.textTheme.labelLarge?.copyWith(

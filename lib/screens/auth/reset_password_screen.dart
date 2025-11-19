@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart'; // Required for animations
+import '../../features/common/password_input_field.dart';
 import '../../providers/auth/auth_controller.dart';
 import '../../features/utils/validators.dart';
 import '../../providers/auth/reset_password_controller.dart';
@@ -51,17 +52,34 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     ref.listen<AsyncValue<void>>(
       resetPasswordControllerProvider,
-          (_, state) {
-        if (state.hasError && !state.isLoading) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(state.error.toString())));
+          (_, state) async {
+        // 1. Ignore Loading State (Prevents premature firing)
+        if (state.isLoading) return;
+        // 2. HANDLE ERROR FIRST
+        if (state.hasError) {
+          final error = state.error.toString();
+          // Check for session expiration
+          if (error.toLowerCase().contains('no user') ||
+              error.toLowerCase().contains('unauthenticated')) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Session expired. Please verify OTP again.'))
+            );
+            context.go('/forgot-password');
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+          }
+          // 🛑 RETURN HERE so we don't fall through to success logic
+          return;
         }
-        if (state.hasValue) {
+        // 3. HANDLE SUCCESS (Only if no error)
+        // We use 'valueOrNull' check to ensure we actually completed the action
+        if (!state.hasError && state.hasValue) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text('Password reset successfully. Please log in.')));
-          // For security, log the user out and send to login
-          ref.read(authControllerProvider.notifier).signOut();
-          context.go('/login');
+          await ref.read(authControllerProvider.notifier).signOut();
+          if (context.mounted) {
+            context.go('/login');
+          }
         }
       },
     );
@@ -120,24 +138,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         // New Password Field
-                        TextFormField(
+                        PasswordInputField(
                           controller: _newPasswordController,
-                          obscureText: _obscureNewPassword,
-                          decoration: InputDecoration(
-                            labelText: 'New Password',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureNewPassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () => setState(() =>
-                              _obscureNewPassword = !_obscureNewPassword),
-                            ),
-                          ),
-                          validator: AppValidators.validatePassword,
+                          labelText: 'New Password',
                         ),
 
                         // Helper button for Password Rules (Moved out of suffixIcon)
@@ -156,24 +159,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         const SizedBox(height: 8),
 
                         // Confirm Password Field
-                        TextFormField(
+                        PasswordInputField(
                           controller: _confirmPasswordController,
-                          obscureText: _obscureConfirmPassword,
-                          decoration: InputDecoration(
-                            labelText: 'Confirm New Password',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureConfirmPassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: theme.hintColor,
-                              ),
-                              onPressed: () => setState(() =>
-                              _obscureConfirmPassword =
-                              !_obscureConfirmPassword),
-                            ),
-                          ),
+                          labelText: 'Confirm Password',
+                          textInputAction: TextInputAction.done,
+                          // Override the default validator to check matching
                           validator: (value) {
                             if (value != _newPasswordController.text) {
                               return 'Passwords do not match.';
@@ -185,7 +175,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
                         // Reset Button
                         SizedBox(
-                          height: 56,
+                          width: double.infinity,
                           child: ElevatedButton(
                             onPressed: resetState.isLoading
                                 ? null
