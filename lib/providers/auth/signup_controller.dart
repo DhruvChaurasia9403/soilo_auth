@@ -96,7 +96,6 @@ class SignUpController extends AsyncNotifier<String?> {
   Future<void> completeSignUpWithOtp(String verificationId, String smsCode) async {
     state = const AsyncValue.loading();
     final authRepository = ref.read(authRepositoryProvider);
-    final firebaseAuth = FirebaseAuth.instance;
 
     try {
       // Build phone credential from verificationId & smsCode (do NOT sign-in with this)

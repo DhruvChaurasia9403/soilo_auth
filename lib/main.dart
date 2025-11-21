@@ -14,14 +14,11 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   final prefs = await SharedPreferences.getInstance();
-  final isPendingReset = prefs.getBool('pending_password_reset') ?? false;
+  final isPendingReset = prefs.getBool('login_pending_2fa') ?? false;
 
   if (isPendingReset) {
-    // The user killed the app while in the "Reset Password" flow.
-    // Their session is valid, but they shouldn't be in the app.
-    // Force Logout.
     await FirebaseAuth.instance.signOut();
-    await prefs.remove('pending_password_reset'); // Clear flag
+    await prefs.remove('login_pending_2fa'); // Clear flag
     debugPrint("⚠️ Security: Cleared incomplete password reset session.");
   }
   runApp(

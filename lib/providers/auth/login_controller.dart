@@ -1,51 +1,93 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/auth/auth_repository.dart';
-import '../../routes/router.dart'; // Needed to set the flow flag
+import '../../routes/router.dart';
 
 class LoginController extends AsyncNotifier<String?> {
   String? _pendingPhone;
-  // We don't need _pendingPassword anymore because we verify it in Step 1
+  String? _pendingPassword; // 👈 Added to store password
 
   @override
   String? build() => null;
 
-  /// Step 1: Check Password FIRST, then send OTP
+  // --- 1. INITIAL LOGIN (Checks Password + Sends OTP) ---
   Future<void> sendOtpForLogin({
     required String phoneNumber,
     required String password,
     required Function(String verificationId) onCodeSent,
     required Function(String error) onError,
+    Function(String verificationId)? onAutoRetrievalTimeout,
   }) async {
     state = const AsyncValue.loading();
+    _pendingPhone = phoneNumber;
+    _pendingPassword = password; // Store for later use
+
+    ref.read(isAuthFlowInProgressProvider.notifier).setFlow(true);
     final authRepository = ref.read(authRepositoryProvider);
 
-    _pendingPhone = phoneNumber;
-
-    // 1. 🛑 SIGNAL ROUTER: "I am logging in, but don't go to Home yet."
-    ref.read(isAuthFlowInProgressProvider.notifier).setFlow(true);
-
     try {
-      // 2. 🔐 PASSWORD CHECK (Pseudo-Email Strategy)
-      // We check the password against Firebase BEFORE sending SMS.
+      // 1. Set Dirty Flag
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('login_pending_2fa', true);
 
+      // 2. Check Password (Triggers Auth Change)
+      final pseudoEmail = '$phoneNumber@soilo.app';
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: pseudoEmail,
+          password: password
+      );
 
-      // A. Sign in to validate password
-      await authRepository.signInWithPhonePassword(phoneNumber, password);
+      // Force Sign out to keep session clean (Triggers Auth Change)
+      // await FirebaseAuth.instance.signOut();
 
-      // B. 🛑 IMMEDIATE SIGN OUT (The Fix)
-      // We sign out so if the app is killed here, the user is NOT logged in.
-      // This forces them to restart the flow if they quit before OTP.
-      await authRepository.signOut();
+      // 3. Send OTP
+      await _sendOtpInternal(phoneNumber, onCodeSent, onError, onAutoRetrievalTimeout);
 
-      // 3. 📨 SEND OTP (2FA)
+    } on FirebaseAuthException catch (e) {
+      await _cleanupSession();
+      String msg = e.message ?? 'Login failed';
+      if (e.code == 'wrong-password') msg = 'Incorrect Password.';
+      if (e.code == 'user-not-found') msg = 'Account not found.';
+      onError(msg);
+      state = AsyncValue.error(msg, StackTrace.current);
+    } catch (e) {
+      await _cleanupSession();
+      onError(e.toString());
+      state = AsyncValue.error(e, StackTrace.current);
+    }
+  }
+
+  // --- 2. RESEND OTP (Skips Password Check) ---
+  // This avoids triggering AuthState changes, preserving Router state.
+  Future<void> resendOtp({
+    required Function(String verificationId) onCodeSent,
+    required Function(String error) onError,
+    Function(String verificationId)? onAutoRetrievalTimeout,
+  }) async {
+    if (_pendingPhone == null) {
+      onError("Session expired. Please login again.");
+      return;
+    }
+
+    state = const AsyncValue.loading();
+    await _sendOtpInternal(_pendingPhone!, onCodeSent, onError, onAutoRetrievalTimeout);
+  }
+
+  // Helper for shared OTP sending logic
+  Future<void> _sendOtpInternal(
+      String phoneNumber,
+      Function(String) onCodeSent,
+      Function(String) onError,
+      Function(String)? onAutoRetrievalTimeout
+      ) async {
+    final authRepository = ref.read(authRepositoryProvider);
+    try {
       await authRepository.verifyPhoneNumber(
         phoneNumber,
         verificationFailed: (e) {
-          // Reset flow if verification fails
-          ref.read(isAuthFlowInProgressProvider.notifier).setFlow(false);
-
-          final errorMsg = e.message ?? 'Phone verification failed.';
+          _cleanupSession();
+          final errorMsg = e.message ?? 'Verification failed.';
           onError(errorMsg);
           state = AsyncValue.error(errorMsg, StackTrace.current);
         },
@@ -55,87 +97,77 @@ class LoginController extends AsyncNotifier<String?> {
         },
         codeAutoRetrievalTimeout: (verificationId) {
           state = AsyncValue.data(verificationId);
+          if (onAutoRetrievalTimeout != null) {
+            onAutoRetrievalTimeout(verificationId);
+          }
         },
       );
-
-    } on FirebaseAuthException catch (e) {
-      // Authentication failed (Wrong password or User not found)
-      FirebaseAuth.instance.signOut();
-      ref.read(isAuthFlowInProgressProvider.notifier).setFlow(false);
-
-      String msg = e.message ?? 'Login failed';
-      if (e.code == 'wrong-password') msg = 'Incorrect Password.';
-      if (e.code == 'user-not-found') msg = 'Account not found.';
-
-      onError(msg);
-      state = AsyncValue.error(msg, StackTrace.current);
     } catch (e) {
-      FirebaseAuth.instance.signOut();
-      ref.read(isAuthFlowInProgressProvider.notifier).setFlow(false);
       onError(e.toString());
       state = AsyncValue.error(e, StackTrace.current);
     }
   }
 
-  /// Step 2: after OTP entered — verify the phone credential
-  /// We now need the PASSWORD here to sign them in for real.
+  // --- 3. COMPLETE LOGIN ---
   Future<void> completeLoginWithOtp({
     required String verificationId,
     required String smsCode,
-    required String password, // 👈 New Argument
+    String? password // Optional now, can use pending
   }) async {
     state = const AsyncValue.loading();
 
-    try {
-      // 1. Re-Authenticate with Password (since we signed out in Step 1)
-      // We know _pendingPhone is set from Step 1
-      if (_pendingPhone == null) throw Exception("Session expired. Please login again.");
+    final pwd = password ?? _pendingPassword;
+    if (pwd == null || _pendingPhone == null) {
+      state = AsyncValue.error("Missing credentials", StackTrace.current);
+      return;
+    }
 
+    try {
       final pseudoEmail = '$_pendingPhone@soilo.app';
 
-      // This performs the REAL, Persistent login
+      // 1. Sign in with Password (REAL LOGIN)
       final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: pseudoEmail,
-          password: password
+          password: pwd
       );
 
       final user = userCredential.user;
 
-      // 2. Verify/Link Phone (2FA check)
-      // This proves they have the device
+      // 2. Link Phone Credential
       if (user != null) {
         final credential = PhoneAuthProvider.credential(
             verificationId: verificationId,
             smsCode: smsCode
         );
-        // Update the phone number to link this specific OTP session
-        // (or just to verify the credential is valid)
         await user.updatePhoneNumber(credential);
       }
 
-      // 🎉 SUCCESS
+      // Cleanup
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('login_pending_2fa');
       _pendingPhone = null;
+      _pendingPassword = null;
 
-      // Turn off the flow flag so the Router finally redirects to /home
       ref.read(isAuthFlowInProgressProvider.notifier).setFlow(false);
-
       state = const AsyncValue.data(null);
 
     } on FirebaseAuthException catch (e) {
-      // If OTP failed, ensure we stay signed out
-      await FirebaseAuth.instance.signOut();
-      ref.read(isAuthFlowInProgressProvider.notifier).setFlow(false);
-
+      await _cleanupSession();
       state = AsyncValue.error(e.message ?? 'OTP verification failed', StackTrace.current);
     } catch (e) {
-      await FirebaseAuth.instance.signOut();
-      ref.read(isAuthFlowInProgressProvider.notifier).setFlow(false);
+      await _cleanupSession();
       state = AsyncValue.error(e, StackTrace.current);
     }
   }
+
+  Future<void> _cleanupSession() async {
+    await FirebaseAuth.instance.signOut();
+    ref.read(isAuthFlowInProgressProvider.notifier).setFlow(false);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('login_pending_2fa');
+  }
 }
 
-// Provider
 final loginControllerProvider = AsyncNotifierProvider<LoginController, String?>(() {
   return LoginController();
 });

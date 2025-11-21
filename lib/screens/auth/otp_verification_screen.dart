@@ -102,6 +102,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       _resendEnabled = false;
       _secondsLeft = 30; // Reset visual timer immediately
     });
+    _startCountdown();
 
     // Helper to handle success
     void handleSuccess(String newVerId) {
@@ -109,7 +110,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       setState(() => _currentVerificationId = newVerId);
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Code resent successfully!')));
-      _startCountdown(); // 👈 Start timer ONLY after success
+      // _startCountdown(); // 👈 Start timer ONLY after success
     }
     // 👇 New Handler for Timeout
     void handleTimeout(String newVerId) {
@@ -119,7 +120,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Auto-retrieval timed out. Please enter code manually.')));
       // ✅ Re-enable timer/button so they aren't stuck
-      _startCountdown();
+      // _startCountdown();
     }
 
     // Helper to handle error
@@ -127,7 +128,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Resend failed: $err')));
-      _startCountdown(); // 👈 Start timer even on error so user can try again later
+      // _startCountdown(); // 👈 Start timer even on error so user can try again later
     }
 
     try {
@@ -140,11 +141,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           break;
 
         case VerificationPurpose.login:
-          await ref.read(loginControllerProvider.notifier).sendOtpForLogin(
-            phoneNumber: widget.phoneNumber,
-            password: widget.password ?? '',
+          await ref.read(loginControllerProvider.notifier).resendOtp(
             onCodeSent: handleSuccess,
             onError: handleError,
+            onAutoRetrievalTimeout: handleTimeout,
           );
           break;
 

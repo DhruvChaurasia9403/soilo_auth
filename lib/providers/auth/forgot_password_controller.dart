@@ -35,7 +35,8 @@ class ForgotPasswordController extends AsyncNotifier<String?> {
           onCodeSent(verificationId); // Trigger navigation to OTP screen
         },
         codeAutoRetrievalTimeout: (verificationId) {
-          state = AsyncValue.data(verificationId); // Keep verification ID
+          state = AsyncValue.data(verificationId);
+          // Keep verification ID
           // onCodeSent(verificationId);
           print("Timer timed out");
           if (onAutoRetrievalTimeout != null) {
