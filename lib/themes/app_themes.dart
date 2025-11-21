@@ -1,93 +1,92 @@
 import 'package:flutter/material.dart';
-
 import 'app_factory.dart';
 
 class AppThemes {
-  // ----------------------------------------------------------------
-  // BASE COLORS (Brand)
-  // ----------------------------------------------------------------
-  static const Color primary = Color(0xFF2E7D32); // Green 800
-  static const Color accent = Color(0xFF388E3C); // Green 700
-  static const Color lightGreen = Color(0xFFA5D6A7); // Green 300
+  // ===========================================================================
+  // LIGHT THEME PALETTE (New: Green, Expensive, Light)
+  // ===========================================================================
+  static const Color _lightPrimary = Color(0xFF2D6A4F); // "Forest Fern" - Rich & Natural
+  static const Color _lightAccent = Color(0xFF52B788);  // "Fresh Mint"
+  static const Color _lightSecondary = Color(0xFF74C69D);
+
+  static const Color _lightBg = Color(0xFFF7F9F8); // "Mint Cream" - Premium Off-White
+  static const Color _lightText = Color(0xFF1B4332); // Deep Green-Black text
+
+  static const Color _lightInputFill = Colors.white;
+  static const Color _lightInputBorder = Color(0xFFD8E6DE); // Subtle green-grey border
+
+  // ===========================================================================
+  // DARK THEME PALETTE (Original: Deep Teal & Amber)
+  // ===========================================================================
+  static const Color _darkPrimary = Color(0xFF004D40); // Original Deep Teal
+  static const Color _darkPrimaryLight = Color(0xFF00796B);
+  static const Color _darkAccent = Color(0xFFFFA726); // Original Warm Amber
+
+  static const Color _darkBg = Color(0xFF121212); // Original Dark Grey
+  static const Color _darkText = Color(0xFFE0E0E0); // Original Off-White text
+
+  static final Color _darkInputFill = Colors.grey.shade800.withOpacity(0.5);
+
 
   // ----------------------------------------------------------------
-  // LIGHT THEME COLORS
-  // ----------------------------------------------------------------
-  static const Color _lightScaffoldBg = Colors.white;
-  static const Color _lightAppBarBg = primary;
-  static const Color _lightInputLabel = accent;
-  static const Color _lightInputFloatingLabel = primary;
-  static const Color _lightInputPrefixIcon = primary;
-  static const Color _lightInputBorder = lightGreen;
-  static const Color _lightInputFocusedBorder = primary;
-  static final Color _lightError = Colors.red.shade600;
-  static const Color _lightProgress = primary;
-  static const Color _lightSnackBarBg = primary;
-
-  // ----------------------------------------------------------------
-  // DARK THEME COLORS
-  // ----------------------------------------------------------------
-  static const Color _darkScaffoldBg = Color(0xFF121212);
-  static const Color _darkAppBarBg = primary;
-  static const Color _darkInputFill = Color(0xFF1E1E1E);
-  static const Color _darkInputLabel = lightGreen;
-  static const Color _darkInputFloatingLabel = lightGreen;
-  static const Color _darkInputPrefixIcon = lightGreen;
-  static final Color _darkInputBorder = Colors.green.shade800;
-  static const Color _darkInputFocusedBorder = lightGreen;
-  static final Color _darkError = Colors.red.shade600; // Or Colors.red.shade400
-  static const Color _darkProgress = lightGreen;
-  static const Color _darkSnackBarBg = Color(0xFF1E1E1E);
-
-  // ----------------------------------------------------------------
-  // LIGHT THEME
+  // LIGHT THEME CONFIGURATION
   // ----------------------------------------------------------------
   static ThemeData light = ThemeFactory(
     config: ThemeConfig(
-      // Base
-      primaryColor: primary,
-      accentColor: accent,
-      lightAccent: lightGreen,
+      primaryColor: _lightPrimary,
+      accentColor: _lightAccent,
+      lightAccent: _lightSecondary,
       isDark: false,
-      borderRadius: 12,
-      // Specific
-      scaffoldBg: _lightScaffoldBg,
-      appBarBg: _lightAppBarBg,
-      inputFillColor: null, // No fill for light mode
-      inputLabel: _lightInputLabel,
-      inputFloatingLabel: _lightInputFloatingLabel,
-      inputPrefixIcon: _lightInputPrefixIcon,
+
+      scaffoldBg: _lightBg,
+      appBarBg: Colors.transparent,
+      textColor: _lightText,
+
+      // Premium Light Inputs
+      inputFillColor: _lightInputFill,
+      inputLabel: Color(0xFFA4C3B2),
+      inputFloatingLabel: _lightPrimary,
+      inputPrefixIcon: _lightSecondary,
       inputBorder: _lightInputBorder,
-      inputFocusedBorder: _lightInputFocusedBorder,
-      errorColor: _lightError,
-      progressColor: _lightProgress,
-      snackBarBg: _lightSnackBarBg,
+      inputFocusedBorder: _lightPrimary,
+
+      errorColor: Color(0xFFD32F2F),
+      progressColor: _lightAccent,
+      snackBarBg: _lightPrimary,
+
+      gradientStart: _lightPrimary.withOpacity(0.08),
+      gradientEnd: _lightBg,
     ),
   ).createTheme();
 
   // ----------------------------------------------------------------
-  // DARK THEME
+  // DARK THEME CONFIGURATION (Restored to Original)
   // ----------------------------------------------------------------
   static ThemeData dark = ThemeFactory(
     config: ThemeConfig(
-      // Base
-      primaryColor: primary,
-      accentColor: accent,
-      lightAccent: lightGreen,
+      primaryColor: _darkPrimaryLight, // Dark mode uses lighter teal (from original)
+      accentColor: _darkAccent,
+      lightAccent: _darkPrimary,
       isDark: true,
-      borderRadius: 12,
-      // Specific
-      scaffoldBg: _darkScaffoldBg,
-      appBarBg: _darkAppBarBg,
-      inputFillColor: _darkInputFill, // Has fill for dark mode
-      inputLabel: _darkInputLabel,
-      inputFloatingLabel: _darkInputFloatingLabel,
-      inputPrefixIcon: _darkInputPrefixIcon,
-      inputBorder: _darkInputBorder,
-      inputFocusedBorder: _darkInputFocusedBorder,
-      errorColor: _darkError,
-      progressColor: _darkProgress,
-      snackBarBg: _darkSnackBarBg,
+
+      scaffoldBg: _darkBg,
+      appBarBg: Colors.transparent,
+      textColor: _darkText,
+
+      // Original Dark Inputs
+      inputFillColor: _darkInputFill,
+      inputLabel: Colors.grey,
+      inputFloatingLabel: _darkPrimaryLight,
+      inputPrefixIcon: _darkText,
+      inputBorder: Colors.transparent,
+      inputFocusedBorder: _darkPrimaryLight,
+
+      errorColor: Colors.red.shade400,
+      progressColor: _darkPrimaryLight,
+      snackBarBg: const Color(0xFF1E1E1E),
+
+      gradientStart: _darkPrimaryLight.withOpacity(0.2),
+      gradientEnd: _darkBg,
     ),
   ).createTheme();
 }
