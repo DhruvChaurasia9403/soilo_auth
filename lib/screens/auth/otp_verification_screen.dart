@@ -67,7 +67,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         case VerificationPurpose.signUp:
           ref
               .read(signUpControllerProvider.notifier)
-              .completeSignUpWithOtp(widget.verificationId, otp);
+              .completeSignUpWithOtp(_currentVerificationId, otp);
           break;
 
         case VerificationPurpose.login:
@@ -76,7 +76,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             ref
                 .read(loginControllerProvider.notifier)
                 .completeLoginWithOtp(
-                verificationId: widget.verificationId,
+                verificationId: _currentVerificationId,
                 smsCode: otp,
                 password: widget.password!
             );
@@ -90,7 +90,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         case VerificationPurpose.passwordReset:
           ref
               .read(forgotPasswordControllerProvider.notifier)
-              .verifyOtpAndSignIn(widget.verificationId, otp);
+              .verifyOtpAndSignIn(_currentVerificationId, otp);
           break;
       }
     }
@@ -98,7 +98,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   // Add this method to your state class
   Future<void> _onResendPressed() async {
     // Disable button immediately to prevent double clicks
-    setState(() => _resendEnabled = false);
+    setState(() {
+      _resendEnabled = false;
+      _secondsLeft = 30; // Reset visual timer immediately
+    });
 
     // Helper to handle success
     void handleSuccess(String newVerId) {
@@ -107,6 +110,16 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Code resent successfully!')));
       _startCountdown(); // 👈 Start timer ONLY after success
+    }
+    // 👇 New Handler for Timeout
+    void handleTimeout(String newVerId) {
+      if (!mounted) return;
+      setState(() => _currentVerificationId = newVerId);
+      // Show a different message so user knows what happened
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Auto-retrieval timed out. Please enter code manually.')));
+      // ✅ Re-enable timer/button so they aren't stuck
+      _startCountdown();
     }
 
     // Helper to handle error
@@ -142,6 +155,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             phoneNumber: widget.phoneNumber,
             onCodeSent: handleSuccess,
             onError: handleError,
+            onAutoRetrievalTimeout: handleTimeout,
           );
           break;
       }

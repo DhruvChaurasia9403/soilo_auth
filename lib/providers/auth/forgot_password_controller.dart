@@ -17,6 +17,7 @@ class ForgotPasswordController extends AsyncNotifier<String?> {
     required String phoneNumber,
     required Function(String verificationId) onCodeSent,
     required Function(String error) onError,
+    Function(String verificationId)? onAutoRetrievalTimeout,
   }) async {
     state = const AsyncValue.loading();
     final authRepository = ref.read(authRepositoryProvider);
@@ -36,6 +37,11 @@ class ForgotPasswordController extends AsyncNotifier<String?> {
         codeAutoRetrievalTimeout: (verificationId) {
           state = AsyncValue.data(verificationId); // Keep verification ID
           // onCodeSent(verificationId);
+          print("Timer timed out");
+          if (onAutoRetrievalTimeout != null) {
+            print("Timer Method called");
+            onAutoRetrievalTimeout(verificationId);
+          }
         },
       );
     } on Exception catch (e) {

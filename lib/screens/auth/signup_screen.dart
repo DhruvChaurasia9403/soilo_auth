@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/common/password_input_field.dart';
 import '../../features/common/phone_input_field.dart';
+import '../../features/common/primary_button.dart';
 import '../../providers/auth/signup_controller.dart';
 import '../../features/auth/user_role.dart';
 import '../../features/utils/validators.dart';
@@ -148,12 +149,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                         const SizedBox(height: 32),
 
                         // Sign Up Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: signUpState.isLoading
-                                ? null
-                                : () {
+                    PrimaryButton(
+                      text: 'SIGN UP',
+                      isLoading: signUpState.isLoading,
+                      onPressed: () {
                               if (_formKey.currentState!.validate()) {
                                 ref
                                     .read(signUpControllerProvider
@@ -190,19 +189,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                                 );
                               }
                             },
-                            child: signUpState.isLoading
-                                ? SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                // 2. REMOVED: Colors.white
-                                // 2. FIXED: Uses onPrimary (contrast color from theme)
-                                color: theme.colorScheme.onPrimary,
-                                strokeWidth: 2.5,
-                              ),
-                            )
-                                : const Text('SIGN UP'),
-                          ),
                         ),
 
                         const SizedBox(height: 24),

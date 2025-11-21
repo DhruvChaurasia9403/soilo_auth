@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart'; // Required for animations
 import 'package:go_router/go_router.dart';
 import '../../features/common/phone_input_field.dart';
+import '../../features/common/primary_button.dart';
 import '../../providers/auth/forgot_password_controller.dart';
 import '../../themes/app_factory.dart'; // For ThemeConfig
 
@@ -96,12 +97,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         ),
                         const SizedBox(height: 24),
 
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: resetPasswordState.isLoading
-                                ? null
-                                : () {
+                    PrimaryButton(
+                      text: 'SEND VERIFICATION CODE',
+                      isLoading: resetPasswordState.isLoading,
+                      onPressed: () {
                               if (_formKey.currentState!.validate()) {
                                 ref
                                     .read(forgotPasswordControllerProvider
@@ -129,21 +128,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                                         content:
                                         Text('Error: $error')));
                                   },
+                                  onAutoRetrievalTimeout: null,
                                 );
                               }
                             },
-                            child: resetPasswordState.isLoading
-                                ? SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                // REPLACED: Colors.white -> onPrimary
-                                color: theme.colorScheme.onPrimary,
-                                strokeWidth: 2.5,
-                              ),
-                            )
-                                : const Text('SEND VERIFICATION CODE'),
-                          ),
                         ),
                       ],
                     ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart'; // Required for animations
 import '../../features/common/password_input_field.dart';
+import '../../features/common/primary_button.dart';
 import '../../providers/auth/auth_controller.dart';
 import '../../features/utils/validators.dart';
 import '../../providers/auth/reset_password_controller.dart';
@@ -171,33 +172,16 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         const SizedBox(height: 32),
 
                         // Reset Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: resetState.isLoading
-                                ? null
-                                : () {
-                              if (_formKey.currentState!.validate()) {
-                                ref
-                                    .read(resetPasswordControllerProvider
-                                    .notifier)
-                                    .updateUserPassword(
-                                    _newPasswordController.text
-                                        .trim());
-                              }
-                            },
-                            child: resetState.isLoading
-                                ? SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                // Use onPrimary so it works with any button color
-                                color: theme.colorScheme.onPrimary,
-                                strokeWidth: 2.5,
-                              ),
-                            )
-                                : const Text('RESET PASSWORD'),
-                          ),
+                        PrimaryButton(
+                          text: 'RESET PASSWORD',
+                          isLoading: resetState.isLoading,
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              ref
+                                  .read(resetPasswordControllerProvider.notifier)
+                                  .updateUserPassword(_newPasswordController.text.trim());
+                            }
+                          },
                         ),
                       ],
                     ),

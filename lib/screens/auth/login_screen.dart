@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/common/password_input_field.dart';
 import '../../features/common/phone_input_field.dart';
+import '../../features/common/primary_button.dart';
 import '../../providers/auth/login_controller.dart';
 import '../../themes/app_factory.dart';
 import 'package:flutter/services.dart';
@@ -117,12 +118,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           const SizedBox(height: 24),
 
           // Login Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: loginState.isLoading
-                  ? null
-                  : () {
+      PrimaryButton(
+        text: 'LOGIN',
+        isLoading: loginState.isLoading,
+        onPressed: () {
                 if (_formKey.currentState!.validate()) {
                   ref
                       .read(loginControllerProvider.notifier)
@@ -147,15 +146,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   );
                 }
               },
-              child: loginState.isLoading
-                  ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                      color: Colors.white, strokeWidth: 2)
-              )
-                  : const Text('Login'),
-            ),
           ),
 
           TextButton(
