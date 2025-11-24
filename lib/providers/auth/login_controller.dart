@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/auth/auth_repository.dart';
 import '../../routes/router.dart';
+import '../login_flow_provider.dart';
 
 class LoginController extends AsyncNotifier<String?> {
   String? _pendingPhone;
@@ -28,15 +29,9 @@ class LoginController extends AsyncNotifier<String?> {
 
     try {
       // 1. Set Dirty Flag
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('login_pending_2fa', true);
+      await ref.read(loginFlowPersistenceProvider.notifier).setPending(true);
 
-      // 2. Check Password (Triggers Auth Change)
-      final pseudoEmail = '$phoneNumber@soilo.app';
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: pseudoEmail,
-          password: password
-      );
+      await authRepository.signInWithPhonePassword(phoneNumber, password);
 
       // Force Sign out to keep session clean (Triggers Auth Change)
       // await FirebaseAuth.instance.signOut();
@@ -143,8 +138,7 @@ class LoginController extends AsyncNotifier<String?> {
       }
 
       // Cleanup
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('login_pending_2fa');
+      await ref.read(loginFlowPersistenceProvider.notifier).setPending(false);
       _pendingPhone = null;
       _pendingPassword = null;
 
@@ -163,8 +157,7 @@ class LoginController extends AsyncNotifier<String?> {
   Future<void> _cleanupSession() async {
     await FirebaseAuth.instance.signOut();
     ref.read(isAuthFlowInProgressProvider.notifier).setFlow(false);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('login_pending_2fa');
+    await ref.read(loginFlowPersistenceProvider.notifier).setPending(false);
   }
 }
 

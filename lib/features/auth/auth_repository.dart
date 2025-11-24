@@ -152,6 +152,18 @@ class AuthRepository {
     }
   }
 
+  Future<void> updatePhoneCredential(PhoneAuthCredential credential) async {
+    final user = _firebaseAuth.currentUser;
+    if (user != null) {
+      await user.updatePhoneNumber(credential);
+    } else {
+      throw FirebaseAuthException(
+          code: 'no-current-user',
+          message: 'No user found to update.'
+      );
+    }
+  }
+
   // --- Logout ---
   Future<void> signOut() async {
     try {

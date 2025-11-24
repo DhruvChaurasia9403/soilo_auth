@@ -1,3 +1,5 @@
+import 'package:checking/providers/login_flow_provider.dart';
+import 'package:checking/providers/reset_flow_provider.dart';
 import 'package:checking/routes/router.dart';
 import 'package:checking/themes/app_themes.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,12 +16,15 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   final prefs = await SharedPreferences.getInstance();
-  final isPendingReset = prefs.getBool('login_pending_2fa') ?? false;
-
-  if (isPendingReset) {
+  final isLoginPending = prefs.getBool(LoginFlowNotifier.key) ?? false;
+  final isResetPending = prefs.getBool(ResetFlowNotifier.key) ?? false;
+  if (isLoginPending || isResetPending) {
+    debugPrint("⚠️ Security: Detected incomplete session (Login: $isLoginPending, Reset: $isResetPending).");
     await FirebaseAuth.instance.signOut();
-    await prefs.remove('login_pending_2fa'); // Clear flag
-    debugPrint("⚠️ Security: Cleared incomplete password reset session.");
+    await prefs.remove(LoginFlowNotifier.key);
+    await prefs.remove(ResetFlowNotifier.key);
+
+    debugPrint("✅ Security: Session cleared. User forced to Login.");
   }
   runApp(
     const ProviderScope(
