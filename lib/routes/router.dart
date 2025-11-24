@@ -1,105 +1,166 @@
-import 'package:checking/screens/auth/forgot_password_screen.dart';
-import 'package:checking/screens/auth/login_screen.dart';
-import 'package:checking/screens/auth/otp_verification_screen.dart';
-import 'package:checking/screens/auth/signup_screen.dart';
-import 'package:checking/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:async';
 
-// --- PROVIDER that listens to FirebaseAuth user changes ---
+// Screen Imports
+import '../providers/reset_flow_provider.dart';
+import '../screens/auth/login_screen.dart';
+import '../screens/auth/signup_screen.dart';
+import '../screens/auth/otp_verification_screen.dart';
+import '../screens/auth/forgot_password_screen.dart';
+import '../screens/auth/reset_password_screen.dart';
+import '../screens/home/home_screen.dart';
+import '../screens/auth/signup_screen.dart' show VerificationPurpose;
+
+// --- 1. Auth State Provider ---
 final authStateProvider = StreamProvider<User?>(
-  (ref) => FirebaseAuth.instance.authStateChanges(),
+      (ref) => FirebaseAuth.instance.authStateChanges(),
 );
 
-// --- ROUTER PROVIDER ---
+// --- 2. Flow Guard Notifier ---
+class AuthFlowNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void setFlow(bool value) {
+    state = value;
+  }
+}
+
+final isAuthFlowInProgressProvider =
+NotifierProvider<AuthFlowNotifier, bool>(() {
+  return AuthFlowNotifier();
+});
+
+// --- 3. Router Notifier ---
+class RouterNotifier extends ChangeNotifier {
+  final Ref _ref;
+
+  RouterNotifier(this._ref) {
+    _ref.listen<AsyncValue<User?>>(
+      authStateProvider,
+          (_, __) => notifyListeners(),
+    );
+    _ref.listen<bool>(
+      isAuthFlowInProgressProvider,
+          (_, __) => notifyListeners(),
+    );
+
+    //A IMp change
+
+    _ref.listen<bool>(
+      resetFlowPersistenceProvider,
+          (_, __) => notifyListeners(),
+    );
+  }
+
+  String? redirect(BuildContext context, GoRouterState state) {
+    final authState = _ref.read(authStateProvider);
+    final isFlowInProgress = _ref.read(isAuthFlowInProgressProvider);
+    final isResetPersisted = _ref.read(resetFlowPersistenceProvider);
+    final isAuth = authState.asData?.value != null;
+    final location = state.matchedLocation;
+
+    // 1. PRIORITY: If flow is in progress, ALLOW EVERYTHING.
+    if (isAuth && isResetPersisted) {
+      // If they are already there, let them stay. If not, move them there.
+      return location == '/reset-password' ? null : '/reset-password';
+    }
+    if (isFlowInProgress) return null;
+
+    // Define public routes
+    final isLoginRoute = location == '/login';
+    final isSignUpRoute = location == '/signup';
+    final isForgotPassRoute = location == '/forgot-password';
+    final isOtpRoute = location == '/otp-verification';
+    final isResetRoute = location == '/reset-password';
+
+    final isAuthRoute = isLoginRoute || isSignUpRoute || isForgotPassRoute || isOtpRoute;
+
+    // 2. UNAUTHENTICATED LOGIC
+    if (!isAuth) {
+      // 👇 CRITICAL FIX:
+      // If they are on Reset Password, but the FLAG IS GONE (Controller deleted it),
+      // it means they finished. Kick them to login.
+      if (isResetRoute && !isResetPersisted) {
+        return '/login';
+      }
+
+      // Allow standard auth routes
+      if (isAuthRoute || isResetRoute) return null;
+
+      return '/login';
+    }
+
+    // 3. AUTHENTICATED LOGIC
+    if (isAuth) {
+      // If logged in, prevent access to Login/Signup, etc.
+      // Note: We removed isResetRoute from here because Priority #1 handles it.
+      if (isAuthRoute && !isOtpRoute) {
+        return '/home';
+      }
+    }
+
+    return null;
+  }
+}
+
+// --- 4. Router Provider ---
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  final notifier = RouterNotifier(ref);
 
   return GoRouter(
     initialLocation: '/login',
     debugLogDiagnostics: true,
-
-    // Listen to auth state changes
-    refreshListenable: GoRouterRefreshStream(
-      FirebaseAuth.instance.authStateChanges(),
-    ),
-
-    redirect: (context, state) {
-      final isAuth = authState.asData?.value != null;
-      final isLoggingIn =
-          state.uri.toString() == '/login' ||
-          state.uri.toString() == '/signup' ||
-          state.uri.toString() == '/forgot-password' ||
-          state.uri.toString() == '/otp-verification';
-
-      if (!isAuth && !isLoggingIn) {
-        // User not logged in → redirect to login
-        return '/login';
-      }
-
-      if (isAuth && isLoggingIn) {
-        // User logged in → redirect to home
-        return '/home';
-      }
-
-      return null; // stay on current route
-    },
-
+    refreshListenable: notifier,
+    redirect: notifier.redirect,
     routes: [
       GoRoute(
         path: '/home',
-        name: 'home',
         builder: (context, state) => const HomeScreen(),
       ),
       GoRoute(
         path: '/login',
-        name: 'login',
         builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
         path: '/signup',
-        name: 'signup',
         builder: (context, state) => const SignUpScreen(),
       ),
       GoRoute(
         path: '/forgot-password',
-        name: 'forgotPassword',
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
       GoRoute(
+        path: '/reset-password',
+        builder: (context, state) => const ResetPasswordScreen(),
+      ),
+      GoRoute(
         path: '/otp-verification',
-        name: 'otpVerification',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
 
-          final verificationId = extra?['verificationId'] ?? '';
-          final phoneNumber = extra?['phoneNumber'] ?? '';
+          final purpose = extra?['purpose'] as VerificationPurpose? ??
+              VerificationPurpose.signUp;
+
+          final verificationId = extra?['verificationId'] as String? ?? '';
+          final phoneNumber = extra?['phoneNumber'] as String? ?? '';
+          // Extract Password passed from Login Screen
+          final password = extra?['password'] as String?;
+
+          if (verificationId.isEmpty) {
+            return const LoginScreen();
+          }
 
           return OtpVerificationScreen(
             verificationId: verificationId,
             phoneNumber: phoneNumber,
+            purpose: purpose,
+            password: password, // Pass it to the screen
           );
         },
       ),
     ],
   );
 });
-
-// --- Helper to automatically rebuild router when auth changes ---
-class GoRouterRefreshStream extends ChangeNotifier {
-  GoRouterRefreshStream(Stream<dynamic> stream) {
-    notifyListeners();
-    _subscription = stream.asBroadcastStream().listen((_) => notifyListeners());
-  }
-
-  late final StreamSubscription<dynamic> _subscription;
-
-  @override
-  void dispose() {
-    _subscription.cancel();
-    super.dispose();
-  }
-}

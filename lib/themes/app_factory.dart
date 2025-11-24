@@ -1,39 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-/// 1. ThemeConfig is expanded to hold all theme-specific values.
-///    It no longer just holds "base" colors, but the *actual*
-///    colors the theme components will use.
-class ThemeConfig {
+class ThemeConfig extends ThemeExtension<ThemeConfig> {
   final Color primaryColor;
   final Color accentColor;
   final Color lightAccent;
-  final double borderRadius;
   final bool isDark;
 
-  // Added colors
   final Color scaffoldBg;
   final Color appBarBg;
-  final Color? inputFillColor; // Nullable for light mode
+  final Color textColor;
+
+  final Color? inputFillColor;
   final Color inputLabel;
   final Color inputFloatingLabel;
   final Color inputPrefixIcon;
   final Color inputBorder;
   final Color inputFocusedBorder;
+
   final Color errorColor;
   final Color progressColor;
   final Color snackBarBg;
 
+  final Color gradientStart;
+  final Color gradientEnd;
+
   ThemeConfig({
-    // Base
     required this.primaryColor,
     required this.accentColor,
     required this.lightAccent,
-    this.borderRadius = 12,
     required this.isDark,
-
-    // Specific
     required this.scaffoldBg,
     required this.appBarBg,
+    required this.textColor,
     this.inputFillColor,
     required this.inputLabel,
     required this.inputFloatingLabel,
@@ -43,11 +42,61 @@ class ThemeConfig {
     required this.errorColor,
     required this.progressColor,
     required this.snackBarBg,
+    required this.gradientStart,
+    required this.gradientEnd,
   });
+
+  @override
+  ThemeConfig copyWith({
+    Color? primaryColor,
+    Color? accentColor,
+    Color? lightAccent,
+    bool? isDark,
+    Color? scaffoldBg,
+    Color? appBarBg,
+    Color? textColor,
+    Color? inputFillColor,
+    Color? inputLabel,
+    Color? inputFloatingLabel,
+    Color? inputPrefixIcon,
+    Color? inputBorder,
+    Color? inputFocusedBorder,
+    Color? errorColor,
+    Color? progressColor,
+    Color? snackBarBg,
+    Color? gradientStart,
+    Color? gradientEnd,
+  }) {
+    return ThemeConfig(
+      primaryColor: primaryColor ?? this.primaryColor,
+      accentColor: accentColor ?? this.accentColor,
+      lightAccent: lightAccent ?? this.lightAccent,
+      isDark: isDark ?? this.isDark,
+      scaffoldBg: scaffoldBg ?? this.scaffoldBg,
+      appBarBg: appBarBg ?? this.appBarBg,
+      textColor: textColor ?? this.textColor,
+      inputFillColor: inputFillColor ?? this.inputFillColor,
+      inputLabel: inputLabel ?? this.inputLabel,
+      inputFloatingLabel: inputFloatingLabel ?? this.inputFloatingLabel,
+      inputPrefixIcon: inputPrefixIcon ?? this.inputPrefixIcon,
+      inputBorder: inputBorder ?? this.inputBorder,
+      inputFocusedBorder: inputFocusedBorder ?? this.inputFocusedBorder,
+      errorColor: errorColor ?? this.errorColor,
+      progressColor: progressColor ?? this.progressColor,
+      snackBarBg: snackBarBg ?? this.snackBarBg,
+      gradientStart: gradientStart ?? this.gradientStart,
+      gradientEnd: gradientEnd ?? this.gradientEnd,
+    );
+  }
+
+  // --- ERROR FIXED HERE: Added 'covariant' ---
+  @override
+  ThemeConfig lerp(covariant ThemeConfig? other, double t) {
+    if (other == null) return this;
+    return t < 0.5 ? this : other;
+  }
 }
 
-/// 2. ThemeFactory is now "dumb". It just applies values from
-///    config and has NO color logic or isDark checks for colors.
 class ThemeFactory {
   final ThemeConfig config;
 
@@ -59,122 +108,170 @@ class ThemeFactory {
     final ColorScheme scheme = ColorScheme.fromSeed(
       seedColor: config.primaryColor,
       brightness: brightness,
-      // You can also define your error color for the whole scheme
       error: config.errorColor,
+      secondary: config.accentColor,
+      surface: config.isDark ? const Color(0xFF121212) : config.scaffoldBg,
     );
 
-    // --- (Copied from your previous file) ---
-    final TextTheme baseTextTheme =
-    config.isDark ? Typography.whiteMountainView : Typography.blackMountainView;
+    final TextTheme baseTextTheme = GoogleFonts.mulishTextTheme(
+      config.isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme,
+    );
 
-    final TextTheme customTextTheme = baseTextTheme.copyWith(
-      headlineMedium: baseTextTheme.headlineMedium?.copyWith(
-        fontWeight: FontWeight.bold,
-        color: config.isDark ? config.lightAccent : config.primaryColor,
+    final TextTheme customTextTheme = baseTextTheme.apply(
+      bodyColor: config.textColor,
+      displayColor: config.textColor,
+    ).copyWith(
+      // Expensive Looking Headers (Serif)
+      displayMedium: GoogleFonts.playfairDisplay(
+        fontSize: 48,
+        fontWeight: FontWeight.w700,
+        color: config.primaryColor,
+      ),
+      headlineMedium: GoogleFonts.playfairDisplay(
+        fontWeight: FontWeight.w600,
+        color: config.primaryColor,
+        letterSpacing: -0.5,
+      ),
+      headlineSmall: GoogleFonts.playfairDisplay(
+        fontWeight: FontWeight.w600,
+        color: config.textColor,
       ),
       titleLarge: baseTextTheme.titleLarge?.copyWith(
         fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: Colors.white,
+        fontWeight: FontWeight.w700,
+        color: config.textColor,
+        letterSpacing: 0.2,
       ),
-      labelLarge: baseTextTheme.labelLarge?.copyWith(
+      titleMedium: baseTextTheme.titleMedium?.copyWith(
         fontSize: 16,
-        fontWeight: FontWeight.bold,
-      ),
-      labelMedium: baseTextTheme.labelMedium?.copyWith(
+        color: config.isDark ? Colors.grey[300] : const Color(0xFF3A4E44),
         fontWeight: FontWeight.w600,
       ),
     );
-    // --- (End of copy) ---
 
     return ThemeData(
-      useMaterial3: false,
+      useMaterial3: true,
       brightness: brightness,
       colorScheme: scheme,
       primaryColor: config.primaryColor,
-      // All 'isDark' checks are GONE
       scaffoldBackgroundColor: config.scaffoldBg,
       textTheme: customTextTheme,
 
-      // ------------------------- APP BAR -------------------------
+      extensions: [config],
+
       appBarTheme: AppBarTheme(
-        backgroundColor: config.appBarBg, // Just use config value
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        titleTextStyle: customTextTheme.titleLarge,
+        centerTitle: true,
+        iconTheme: IconThemeData(color: config.textColor),
+        titleTextStyle: GoogleFonts.playfairDisplay(
+          fontSize: 24,
+          fontWeight: FontWeight.w600,
+          color: config.textColor,
+          letterSpacing: -0.5,
+        ),
+        surfaceTintColor: Colors.transparent,
       ),
 
-      // ------------------------- INPUT FIELDS -------------------------
       inputDecorationTheme: InputDecorationTheme(
-        // This is a behavior, not a color, so isDark is fine here
-        filled: config.isDark,
-        fillColor: config.inputFillColor, // Just use config value
-        labelStyle: TextStyle(color: config.inputLabel),
+        filled: true,
+        fillColor: config.inputFillColor,
+        labelStyle: TextStyle(color: config.inputLabel, fontSize: 14),
         floatingLabelStyle: TextStyle(
           color: config.inputFloatingLabel,
           fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
         ),
         prefixIconColor: config.inputPrefixIcon,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
-            color: config.inputBorder,
+              color: config.inputBorder,
+              width: config.inputBorder == Colors.transparent ? 0 : 1
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
-            color: config.inputBorder,
+              color: config.inputBorder,
+              width: config.inputBorder == Colors.transparent ? 0 : 1
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
             color: config.inputFocusedBorder,
-            width: 2,
+            width: 1.5,
           ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(
-            color: config.errorColor,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: config.errorColor),
         ),
       ),
 
-      // ------------------------- BUTTONS -------------------------
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: config.accentColor, // This was already good
+          backgroundColor: config.primaryColor,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          minimumSize: const Size.fromHeight(56),
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          elevation: 0,
+          shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(config.borderRadius),
+            borderRadius: BorderRadius.circular(8),
           ),
-          textStyle: customTextTheme.labelLarge,
+          textStyle: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.0,
+          ),
         ),
       ),
 
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          // This one still needs a check, or you can pass it in config
-          foregroundColor:
-          config.isDark ? config.lightAccent : config.primaryColor,
-          textStyle: customTextTheme.labelMedium,
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 32),
+          foregroundColor: config.primaryColor,
+          side: BorderSide(color: config.primaryColor.withOpacity(0.2), width: 1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.0,
+          ),
         ),
       ),
 
-      // ------------------------- PROGRESS -------------------------
       progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: config.progressColor, // Just use config value
+        color: config.progressColor,
       ),
 
-      // ------------------------- SNACKBAR -------------------------
-      snackBarTheme: SnackBarThemeData(
-        backgroundColor: config.snackBarBg, // Just use config value
-        contentTextStyle: const TextStyle(color: Colors.white),
-        behavior: SnackBarBehavior.floating,
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: config.isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: config.isDark ? Colors.transparent : const Color(0xFFE6E8E6),
+            width: 1,
+          ),
+        ),
+        margin: EdgeInsets.zero,
+      ),
+
+      dialogTheme: DialogThemeData(
+        backgroundColor: config.isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        titleTextStyle: GoogleFonts.playfairDisplay(
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          color: config.textColor,
+        ),
       ),
     );
   }

@@ -1,10 +1,14 @@
+import 'package:checking/screens/auth/signup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../features/auth/auth_repository.dart';
-import 'forgot_password_screen.dart';
-import 'signup_screen.dart';
-import '../../features/auth/auth_controller.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/common/password_input_field.dart';
+import '../../features/common/phone_input_field.dart';
+import '../../features/common/primary_button.dart';
+import '../../providers/auth/login_controller.dart';
+import '../../themes/app_factory.dart';
+import 'package:flutter/services.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -15,154 +19,147 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final loginLoadingState = ref.watch(authControllerProvider);
+    final loginState = ref.watch(loginControllerProvider);
+    final theme = Theme.of(context);
 
-    ref.listen<AsyncValue<void>>(
-      authControllerProvider,
+    final ThemeConfig themeConfig = Theme.of(context).extension<ThemeConfig>()!;
+    final gradientStart = themeConfig.gradientStart;
+    final gradientEnd = themeConfig.gradientEnd;
+
+    ref.listen<AsyncValue<String?>>(
+      loginControllerProvider,
           (_, state) {
         if (state.hasError && !state.isLoading) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.error.toString())),
-          );
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(state.error.toString()),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
         }
       },
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-        // REMOVED: backgroundColor: Colors.green.shade800,
-        // This is now handled by your AppBarTheme
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Welcome Back!',
-                // UPDATED: Using the semantic style from TextTheme
-                style: Theme.of(context).textTheme.headlineMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              // Email Address
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address',
-                  prefixIcon: Icon(Icons.email_outlined),
-                  // REMOVED: border: OutlineInputBorder(),
-                  // This is now handled by your InputDecorationTheme
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty || !value.contains('@')) {
-                    return 'Please enter a valid email address.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              // Password
-              TextFormField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  prefixIcon: Icon(Icons.lock_outline),
-                  // REMOVED: border: OutlineInputBorder(),
-                  // This is now handled by your InputDecorationTheme
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    context.push('/forgot-password');
-                  },
-                  child: const Text('Forgot Password?'),
-                  // REMOVED: style: TextStyle(color: Colors.green.shade700)
-                  // This is now handled by your TextButtonTheme
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Login Button
-              ElevatedButton(
-                onPressed: loginLoadingState.isLoading
-                    ? null
-                    : () async {
-                  if (_formKey.currentState!.validate()) {
-                    final authRepo = ref.read(authRepositoryProvider);
-                    try {
-                      ref.read(authControllerProvider.notifier).state =
-                      const AsyncValue.loading();
-
-                      await authRepo.signInWithEmailPassword(
-                        _emailController.text.trim(),
-                        _passwordController.text.trim(),
-                      );
-                      ref.read(authControllerProvider.notifier).state =
-                      const AsyncValue.data(null);
-                    } on Exception catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('Login Failed: ${e.toString()}')),
-                      );
-                      ref.read(authControllerProvider.notifier).state =
-                          AsyncValue.error(e, StackTrace.current);
-                    }
-                  }
-                },
-                // REMOVED: style: ElevatedButton.styleFrom(...)
-                // This is now handled by your ElevatedButtonTheme
-                child: loginLoadingState.isLoading
-                    ? const CircularProgressIndicator(
-                  // This is correct, as your button theme
-                  // sets the foregroundColor to white.
-                  color: Colors.white,
-                )
-                    : const Text(
-                  'LOGIN',
-                  // REMOVED: style: TextStyle(...)
-                  // This is now handled by the textStyle in
-                  // your ElevatedButtonTheme
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Don't have an account?
-              TextButton(
-                onPressed: () {
-                  context.push('/signup');
-                },
-                child: const Text('Don\'t have an account? Sign Up'),
-                // REMOVED: style: TextStyle(color: Colors.green.shade700)
-                // This is now handled by your TextButtonTheme
-              ),
-            ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [gradientStart, gradientEnd],
           ),
         ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.eco_outlined,
+                  size: 64,
+                  color: theme.primaryColor,
+                ),
+                const SizedBox(height: 16),
+
+                Text(
+                  'Welcome to Soilo',
+                  style: theme.textTheme.headlineMedium,
+                ),
+                Text(
+                  'Sign in to continue',
+                  style: theme.textTheme.titleMedium,
+                ),
+
+                const SizedBox(height: 40),
+
+                _buildForm(context, loginState),
+
+                const SizedBox(height: 24),
+
+                // _buildSocialLogin(context, loginState),
+
+              ],
+            ).animate().fadeIn(duration: 500.ms),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForm(BuildContext context, AsyncValue<dynamic> loginState) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          PhoneInputField(
+            controller: _phoneController,
+          ),
+          const SizedBox(height: 16),
+          PasswordInputField(
+            controller: _passwordController,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 24),
+
+          // Login Button
+      PrimaryButton(
+        text: 'LOGIN',
+        isLoading: loginState.isLoading,
+        onPressed: () {
+                if (_formKey.currentState!.validate()) {
+                  ref
+                      .read(loginControllerProvider.notifier)
+                      .sendOtpForLogin(
+                    phoneNumber: _phoneController.text.trim(),
+                    password: _passwordController.text.trim(),
+                    onCodeSent: (verificationId) {
+                      context.push(
+                        '/otp-verification',
+                        extra: {
+                          'verificationId': verificationId,
+                          'phoneNumber': _phoneController.text.trim(),
+                          'purpose': VerificationPurpose.login,
+                          // 👇 PASS PASSWORD TO OTP SCREEN
+                          'password': _passwordController.text.trim(),
+                        },
+                      );
+                    },
+                    onError: (error) {
+                      /* Handled by listener */
+                    },
+                  );
+                }
+              },
+          ),
+
+          TextButton(
+            onPressed: () => context.push('/forgot-password'),
+            child: const Text("Forgot Password?"),
+          ),
+          TextButton(
+            onPressed: () => context.push('/signup'),
+            child: const Text("Don't have an account? Sign Up"),
+          ),
+        ]
+            .animate(interval: 100.ms)
+            .slideY(begin: 0.5, end: 0, curve: Curves.easeOutCubic)
+            .fadeIn(),
       ),
     );
   }

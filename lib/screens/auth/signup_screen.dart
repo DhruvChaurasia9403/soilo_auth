@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../features/auth/signup_controller.dart';
-import 'otp_verification_screen.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/common/password_input_field.dart';
+import '../../features/common/phone_input_field.dart';
+import '../../features/common/primary_button.dart';
+import '../../providers/auth/signup_controller.dart';
+import '../../features/auth/user_role.dart';
+import '../../features/utils/validators.dart';
+import '../../themes/app_factory.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
@@ -14,16 +20,19 @@ class SignUpScreen extends ConsumerStatefulWidget {
 class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _fullNameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
   TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  UserRole? _selectedRole;
+
+  // 1. State for toggles
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
     _fullNameController.dispose();
-    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _phoneController.dispose();
@@ -33,194 +42,189 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     final signUpState = ref.watch(signUpControllerProvider);
-
-    // Listen to the SignUpController state for navigation or error display
-    ref.listen<AsyncValue<String?>>(signUpControllerProvider, (_, state) {
-      if (state.hasError && !state.isLoading) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(state.error.toString())));
-      }
-      if (state.hasValue && state.value != null) {
-        print('OTP code sent successfully. Verification ID: ${state.value}');
-      }
-    });
-
-    // We don't need 'colors' anymore since the AppBarTheme handles it
-    // final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final themeConfig = Theme.of(context).extension<ThemeConfig>()!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sign Up'),
-        // REMOVED: backgroundColor: colors.primary
-        // The AppBarTheme in your factory now handles this automatically.
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Create Your Account',
-                // UPDATED: Uses the style directly from the theme
-                style: Theme.of(context).textTheme.headlineMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              // Full Name
-              TextFormField(
-                controller: _fullNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Full Name',
-                  prefixIcon: Icon(Icons.person_outline),
-                  // The 'border' is now supplied by inputDecorationTheme
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your full name.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              // Email Address
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address',
-                  prefixIcon: Icon(Icons.email_outlined),
-                  // REMOVED: border: OutlineInputBorder()
-                  // This now comes from your theme
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty || !value.contains('@')) {
-                    return 'Please enter a valid email address.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              // Phone Number
-              TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText:
-                  'Phone Number (e.g., +15551234567)',
-                  prefixIcon: Icon(Icons.phone),
-                  // REMOVED: border: OutlineInputBorder()
-                  // This now comes from your theme
-                ),
-                validator: (value) {
-                  if (value == null ||
-                      value.isEmpty ||
-                      !value.startsWith('+') ||
-                      value.length < 10) {
-                    return 'Please enter a valid phone number with country code (e.g., +1XXXXXXXXXX).';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              // Password
-              TextFormField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  prefixIcon: Icon(Icons.lock_outline),
-                  // REMOVED: border: OutlineInputBorder()
-                  // This now comes from your theme
-                ),
-                validator: (value) {
-                  if (value == null || value.length < 6) {
-                    return 'Password must be at least 6 characters.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              // Confirm Password
-              TextFormField(
-                controller: _confirmPasswordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm Password',
-                  prefixIcon: Icon(Icons.lock_outline),
-                  // This one was already correct!
-                ),
-                validator: (value) {
-                  if (value != _passwordController.text) {
-                    return 'Passwords do not match.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              // Sign Up Button
-              ElevatedButton(
-                onPressed: signUpState.isLoading
-                    ? null
-                    : () async {
-                  if (_formKey.currentState!.validate()) {
-                    ref
-                        .read(signUpControllerProvider.notifier)
-                        .signUpAndVerifyPhone(
-                      email: _emailController.text.trim(),
-                      password: _passwordController.text.trim(),
-                      phoneNumber: _phoneController.text.trim(),
-                      onCodeSent: (verificationId) {
-                        context.push(
-                          '/otp-verification',
-                          extra: {
-                            'verificationId': verificationId,
-                            'phoneNumber':
-                            _phoneController.text.trim(),
-                          },
-                        );
-                      },
-                      onError: (error) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Signup Error: $error'),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(), // Uses factory theme (transparent, auto back button)
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [themeConfig.gradientStart, themeConfig.gradientEnd],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.person_add_outlined,
+                    size: 44,
+                    color: themeConfig.primaryColor,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Create Account',
+                    style: theme.textTheme.headlineMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Welcome to Soilo!',
+                    style: theme.textTheme.titleMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        // Full Name
+                        TextFormField(
+                          controller: _fullNameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Full Name',
+                            prefixIcon: Icon(Icons.person_outline),
                           ),
-                        );
-                      },
-                    );
-                  }
-                },
-                child: signUpState.isLoading
-                    ? const CircularProgressIndicator(
-                  // This hardcoded color is OK because the
-                  // ElevatedButtonThemeData *explicitly* sets its
-                  // foregroundColor to white.
-                  color: Colors.white,
-                )
-                    : const Text(
-                  'SIGN UP',
-                  // REMOVED: style: TextStyle(...)
-                  // This now comes from elevatedButtonTheme's textStyle
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Already have an account?
-              TextButton(
-                onPressed: () {
-                  context.pop();
-                },
-                child: const Text(
-                  'Already have an account? Login',
-                  // REMOVED: style: TextStyle(...)
-                  // This now comes from textButtonTheme
-                ),
-              ),
-            ],
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Please enter your full name.'
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Phone
+                        PhoneInputField(
+                          controller: _phoneController,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Role Dropdown
+                        DropdownButtonFormField<UserRole>(
+                          value: _selectedRole,
+                          hint: const Text('Select Your Role'),
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(Icons.work_outline),
+                          ),
+                          items: UserRole.values.map((role) {
+                            return DropdownMenuItem(
+                              value: role,
+                              child: Text(role.displayName),
+                            );
+                          }).toList(),
+                          onChanged: (value) =>
+                              setState(() => _selectedRole = value),
+                          validator: (value) =>
+                          value == null ? 'Please select a role.' : null,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Password Field
+                        PasswordInputField(
+                          controller: _passwordController,
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Confirm Password Field
+                        PasswordInputField(
+                          controller: _confirmPasswordController,
+                          labelText: 'Confirm Password',
+                          textInputAction: TextInputAction.done,
+                          // Override the default validator to check matching
+                          validator: (value) {
+                            if (value != _passwordController.text) {
+                              return 'Passwords do not match.';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 32),
+
+                        // Sign Up Button
+                    PrimaryButton(
+                      text: 'SIGN UP',
+                      isLoading: signUpState.isLoading,
+                      onPressed: () {
+                              if (_formKey.currentState!.validate()) {
+                                ref
+                                    .read(signUpControllerProvider
+                                    .notifier)
+                                    .signUpAndVerifyPhone(
+                                  fullName: _fullNameController.text
+                                      .trim(),
+                                  password: _passwordController.text
+                                      .trim(),
+                                  phoneNumber: _phoneController.text
+                                      .trim(),
+                                  role: _selectedRole!,
+                                  onCodeSent: (verificationId) {
+                                    context.push(
+                                      '/otp-verification',
+                                      extra: {
+                                        'verificationId':
+                                        verificationId,
+                                        'phoneNumber':
+                                        _phoneController.text
+                                            .trim(),
+                                        'purpose':
+                                        VerificationPurpose
+                                            .signUp,
+                                      },
+                                    );
+                                  },
+                                  onError: (error) {
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(
+                                        content: Text(
+                                            'Signup Error: $error')));
+                                  },
+                                );
+                              }
+                            },
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Login Link
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Already have an account?',
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                            TextButton(
+                              onPressed: () => context.pop(),
+                              child: const Text('Login'),
+                            ),
+                          ],
+                        ),
+                      ]
+                          .animate(interval: 50.ms)
+                          .slideY(begin: 0.2, end: 0, curve: Curves.easeOut)
+                          .fadeIn(),
+                    ),
+                  ),
+                ],
+              ).animate().fadeIn(duration: 500.ms),
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+enum VerificationPurpose {
+  signUp,
+  login,
+  passwordReset,
 }
