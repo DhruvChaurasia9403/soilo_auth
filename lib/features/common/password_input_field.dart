@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../utils/validators.dart'; // Import your AppValidators
+
+import '../auth/utils/validators.dart';
 
 class PasswordInputField extends StatefulWidget {
   final TextEditingController controller;

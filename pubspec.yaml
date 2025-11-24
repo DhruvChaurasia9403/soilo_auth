@@ -43,6 +43,7 @@ dependencies:
   flutter_animate: ^4.5.0
   google_fonts: ^6.1.0
   shared_preferences:
+  geolocator:
 
 dev_dependencies:
   flutter_test:
