@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // Screen Imports
+import '../providers/auth/signup_controller.dart';
 import '../providers/reset_flow_provider.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/signup_screen.dart';
@@ -31,6 +33,8 @@ class AuthFlowNotifier extends Notifier<bool> {
     state = value;
   }
 }
+final shouldShowOnboardingProvider = StateProvider<bool>((ref) => false);
+
 
 final isAuthFlowInProgressProvider =
 NotifierProvider<AuthFlowNotifier, bool>(() {
@@ -57,12 +61,14 @@ class RouterNotifier extends ChangeNotifier {
       resetFlowPersistenceProvider,
           (_, __) => notifyListeners(),
     );
+    _ref.listen(shouldShowOnboardingProvider, (_, __) => notifyListeners());
   }
 
   String? redirect(BuildContext context, GoRouterState state) {
     final authState = _ref.read(authStateProvider);
     final isFlowInProgress = _ref.read(isAuthFlowInProgressProvider);
     final isResetPersisted = _ref.read(resetFlowPersistenceProvider);
+    final shouldShowOnboarding = _ref.read(shouldShowOnboardingProvider);
     final isAuth = authState.asData?.value != null;
     final location = state.matchedLocation;
 
@@ -100,8 +106,15 @@ class RouterNotifier extends ChangeNotifier {
 
     // 3. AUTHENTICATED LOGIC
     if (isAuth) {
-      // If logged in, prevent access to Login/Signup, etc.
-      // We explicitly allow /onboarding if the user is a farmer and was just redirected there.
+      // --- IMPORTANT FIX: Allow onboarding immediately after farmer signup ---
+      if (shouldShowOnboarding) {
+        if (location != '/onboarding') {
+          return '/onboarding';
+        }
+        return null; // allow onboarding screen
+      }
+
+      // Block access to auth routes
       if (isAuthRoute && !isOtpRoute) {
         return '/home';
       }
@@ -147,12 +160,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
 
-          final fullName = extra?['fullName'] as String?;
-          final role = extra?['role'] as UserRole?;
+          final dataProvider = ref.read(onboardingDataProvider);
 
-          // Require parameters to enter onboarding
+          // Combine sources
+          final dataSource = extra ?? dataProvider;
+
+          final fullName = dataSource?['fullName'] as String?;
+          final role = dataSource?['role'] as UserRole?;
+
+          // Check validity
           if (fullName == null || role == null || role != UserRole.farmer) {
-            // Kick non-farmers or incomplete data signups to home or login
+            // If data is missing, we must fail gracefully
             return const LoginScreen();
           }
 

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../onboarding/data/models/farm_detail_model.dart';
 import 'user_role.dart';
 
 // --- Provider ---
@@ -161,6 +162,35 @@ class AuthRepository {
           code: 'no-current-user',
           message: 'No user found to update.'
       );
+    }
+  }
+
+  Future<void> updateFarmerProfile({
+    required String uid,
+    required double farmSize,
+    required String farmLocation,
+    required List<CropEntry> crops,
+  }) async {
+    try {
+      // 1. Convert List<CropEntry> to List<Map> for Firestore
+      final List<Map<String, dynamic>> cropData = crops.map((crop) {
+        return {
+          'cropType': crop.cropType,
+          // Store date as Firestore Timestamp or ISO String
+          'dateSown': Timestamp.fromDate(crop.dateSown),
+        };
+      }).toList();
+
+      // 2. Update the user document
+      await _firestore.collection('users').doc(uid).update({
+        'farmSizeHectares': farmSize,
+        'farmLocation': farmLocation,
+        'crops': cropData, // Save the array
+        'isOnboardingComplete': true, // Mark finished
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Failed to save farm details: $e');
     }
   }
 

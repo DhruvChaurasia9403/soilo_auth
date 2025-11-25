@@ -2,7 +2,12 @@
 import 'package:checking/features/auth/user_role.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../../features/auth/auth_repository.dart';
+import '../../routes/router.dart';
+
+// Holds the data needed for the onboarding screen so the Router can access it
+final onboardingDataProvider = StateProvider<Map<String, dynamic>?>((ref) => null);
 
 class SignUpController extends AsyncNotifier<String?> {
   // Will hold verificationId (state) AND pending sign-up details
@@ -134,7 +139,12 @@ class SignUpController extends AsyncNotifier<String?> {
 
       // NEW: Pass data to state so the UI can redirect
       if (_pendingRole == UserRole.farmer) {
+        ref.read(onboardingDataProvider.notifier).state = {
+          'fullName': _pendingFullName,
+          'role': _pendingRole,
+        };
         // Pass required data for onboarding
+        ref.read(shouldShowOnboardingProvider.notifier).state = true;
         state = AsyncValue.data('onboarding|${_pendingFullName}|${_pendingRole!.name}');
       } else {
         // Default success state
