@@ -45,5 +45,8 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<key>NSLocationWhenInUseUsageDescription</key>
+    <string>We need your location to geo-tag your farm for soil and weather recommendations.</string>
 </dict>
 </plist>

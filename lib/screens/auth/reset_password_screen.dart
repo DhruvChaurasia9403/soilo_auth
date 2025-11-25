@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart'; // Required for animations
+import '../../features/auth/utils/validators.dart';
 import '../../features/common/password_input_field.dart';
 import '../../features/common/primary_button.dart';
-import '../../providers/auth/auth_controller.dart';
-import '../../features/utils/validators.dart';
 import '../../providers/auth/reset_password_controller.dart';
-import '../../themes/app_factory.dart'; // For ThemeConfig
+import '../../themes/app_factory.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key});

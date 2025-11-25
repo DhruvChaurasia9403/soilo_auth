@@ -7,7 +7,6 @@ import '../../features/common/phone_input_field.dart';
 import '../../features/common/primary_button.dart';
 import '../../providers/auth/signup_controller.dart';
 import '../../features/auth/user_role.dart';
-import '../../features/utils/validators.dart';
 import '../../themes/app_factory.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {

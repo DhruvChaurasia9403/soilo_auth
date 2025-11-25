@@ -12,6 +12,10 @@ import '../screens/auth/forgot_password_screen.dart';
 import '../screens/auth/reset_password_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/auth/signup_screen.dart' show VerificationPurpose;
+// Production Imports for Farmer Onboarding
+import '../features/onboarding/farmer_onboarding_screen.dart';
+import '../features/auth/user_role.dart';
+
 
 // --- 1. Auth State Provider ---
 final authStateProvider = StreamProvider<User?>(
@@ -75,6 +79,7 @@ class RouterNotifier extends ChangeNotifier {
     final isForgotPassRoute = location == '/forgot-password';
     final isOtpRoute = location == '/otp-verification';
     final isResetRoute = location == '/reset-password';
+    final isOnboardingRoute = location == '/onboarding'; // Include new route
 
     final isAuthRoute = isLoginRoute || isSignUpRoute || isForgotPassRoute || isOtpRoute;
 
@@ -87,8 +92,8 @@ class RouterNotifier extends ChangeNotifier {
         return '/login';
       }
 
-      // Allow standard auth routes
-      if (isAuthRoute || isResetRoute) return null;
+      // Allow standard auth routes and the onboarding route (it has internal guards)
+      if (isAuthRoute || isResetRoute || isOnboardingRoute) return null;
 
       return '/login';
     }
@@ -96,7 +101,7 @@ class RouterNotifier extends ChangeNotifier {
     // 3. AUTHENTICATED LOGIC
     if (isAuth) {
       // If logged in, prevent access to Login/Signup, etc.
-      // Note: We removed isResetRoute from here because Priority #1 handles it.
+      // We explicitly allow /onboarding if the user is a farmer and was just redirected there.
       if (isAuthRoute && !isOtpRoute) {
         return '/home';
       }
@@ -111,7 +116,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final notifier = RouterNotifier(ref);
 
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/login', // RESTORED: Back to standard login
     debugLogDiagnostics: true,
     refreshListenable: notifier,
     redirect: notifier.redirect,
@@ -135,6 +140,27 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/reset-password',
         builder: (context, state) => const ResetPasswordScreen(),
+      ),
+      // --- PRODUCTION: Farmer Onboarding Route (Used after Farmer Signup) ---
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+
+          final fullName = extra?['fullName'] as String?;
+          final role = extra?['role'] as UserRole?;
+
+          // Require parameters to enter onboarding
+          if (fullName == null || role == null || role != UserRole.farmer) {
+            // Kick non-farmers or incomplete data signups to home or login
+            return const LoginScreen();
+          }
+
+          return FarmerOnboardingScreen(
+            fullName: fullName,
+            role: role,
+          );
+        },
       ),
       GoRoute(
         path: '/otp-verification',

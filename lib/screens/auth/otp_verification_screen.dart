@@ -7,6 +7,7 @@ import '../../providers/auth/login_controller.dart';
 import '../../providers/auth/forgot_password_controller.dart';
 import '../../themes/app_factory.dart';
 import 'signup_screen.dart' show VerificationPurpose;
+import '../../features/auth/user_role.dart'; // Import UserRole for redirection logic
 
 class OtpVerificationScreen extends ConsumerStatefulWidget {
   final String verificationId;
@@ -95,7 +96,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       }
     }
   }
-  // Add this method to your state class
+
   Future<void> _onResendPressed() async {
     // Disable button immediately to prevent double clicks
     setState(() {
@@ -194,6 +195,21 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         if (widget.purpose != VerificationPurpose.signUp) return;
         if (state.hasError && !state.isLoading) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.error.toString())));
+        }
+
+        // NEW: Handle redirection based on state value after successful farmer sign up
+        if (state.hasValue && state.value != null && !state.isLoading) {
+          final parts = state.value!.split('|');
+          if (parts[0] == 'onboarding') {
+            final fullName = parts[1];
+            final roleName = parts[2];
+            final role = UserRole.values.firstWhere((r) => r.name == roleName);
+
+            context.go('/onboarding', extra: {
+              'fullName': fullName,
+              'role': role,
+            });
+          }
         }
       },
     );

@@ -94,57 +94,64 @@ class SignUpController extends AsyncNotifier<String?> {
   }
   /// Step 2: after OTP entered — create Firebase user and link phone credential
   Future<void> completeSignUpWithOtp(String verificationId, String smsCode) async {
-    state = const AsyncValue.loading();
-    final authRepository = ref.read(authRepositoryProvider);
+    state = const AsyncValue.loading(); //
+    final authRepository = ref.read(authRepositoryProvider); //
 
     try {
       // Build phone credential from verificationId & smsCode (do NOT sign-in with this)
-      final phoneCredential = PhoneAuthProvider.credential(
-        verificationId: verificationId,
-        smsCode: smsCode,
+      final phoneCredential = PhoneAuthProvider.credential( //
+        verificationId: verificationId, //
+        smsCode: smsCode, //
       );
 
       // Validate pending fields
-      if (_pendingPhone == null ||
-          _pendingPassword == null ||
-          _pendingFullName == null ||
-          _pendingRole == null) {
-        throw Exception('Missing pending signup data.');
+      if (_pendingPhone == null || //
+          _pendingPassword == null || //
+          _pendingFullName == null || //
+          _pendingRole == null) { //
+        throw Exception('Missing pending signup data.'); //
       }
 
       // 1) Create the email/password account (this signs in the new user)
-      // Use repository helper which calls createUserWithEmailAndPassword
-      final userCredential = await authRepository.signUpWithPhonePassword(
-        _pendingPhone!,
-        _pendingPassword!,
+      final userCredential = await authRepository.signUpWithPhonePassword( //
+        _pendingPhone!, //
+        _pendingPassword!, //
       );
 
-      final user = userCredential.user;
-      if (user == null) throw Exception('Failed to create user.');
+      final user = userCredential.user; //
+      if (user == null) throw Exception('Failed to create user.'); //
 
       // 2) Link the phone credential to the newly created user
-      await user.linkWithCredential(phoneCredential);
+      await user.linkWithCredential(phoneCredential); //
 
       // 3) Create Firestore profile
-      await authRepository.createUserProfile(
-        uid: user.uid,
-        fullName: _pendingFullName!,
-        phoneNumber: _pendingPhone!,
-        role: _pendingRole!,
+      await authRepository.createUserProfile( //
+        uid: user.uid, //
+        fullName: _pendingFullName!, //
+        phoneNumber: _pendingPhone!, //
+        role: _pendingRole!, //
       );
 
-      // clear pending values
-      _pendingFullName = null;
-      _pendingPassword = null;
-      _pendingPhone = null;
-      _pendingRole = null;
+      // NEW: Pass data to state so the UI can redirect
+      if (_pendingRole == UserRole.farmer) {
+        // Pass required data for onboarding
+        state = AsyncValue.data('onboarding|${_pendingFullName}|${_pendingRole!.name}');
+      } else {
+        // Default success state
+        state = const AsyncValue.data(null);
+      }
 
-      state = const AsyncValue.data(null);
-    } on FirebaseAuthException catch (e) {
+      // clear pending values
+      _pendingFullName = null; //
+      _pendingPassword = null; //
+      _pendingPhone = null; //
+      _pendingRole = null; //
+
+    } on FirebaseAuthException catch (e) { //
       // Return firebase-specific errors
-      state = AsyncValue.error(e, StackTrace.current);
-    } on Exception catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
+      state = AsyncValue.error(e, StackTrace.current); //
+    } on Exception catch (e) { //
+      state = AsyncValue.error(e, StackTrace.current); //
     }
   }
 }
