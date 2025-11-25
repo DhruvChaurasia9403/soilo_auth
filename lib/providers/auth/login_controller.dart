@@ -33,6 +33,7 @@ class LoginController extends AsyncNotifier<String?> {
 
       await authRepository.signInWithPhonePassword(phoneNumber, password);
 
+      // DON'T REMOVE BELOW TWO COMMENTS AS THEY ARE NECESSARY FOR FUTURE DEV WORKS
       // Force Sign out to keep session clean (Triggers Auth Change)
       // await FirebaseAuth.instance.signOut();
 
@@ -91,6 +92,7 @@ class LoginController extends AsyncNotifier<String?> {
           onCodeSent(verificationId);
         },
         codeAutoRetrievalTimeout: (verificationId) {
+          print("In login controller");
           state = AsyncValue.data(verificationId);
           if (onAutoRetrievalTimeout != null) {
             onAutoRetrievalTimeout(verificationId);
@@ -110,7 +112,7 @@ class LoginController extends AsyncNotifier<String?> {
     String? password // Optional now, can use pending
   }) async {
     state = const AsyncValue.loading();
-
+    final authRepository = ref.read(authRepositoryProvider);
     final pwd = password ?? _pendingPassword;
     if (pwd == null || _pendingPhone == null) {
       state = AsyncValue.error("Missing credentials", StackTrace.current);
@@ -118,24 +120,13 @@ class LoginController extends AsyncNotifier<String?> {
     }
 
     try {
-      final pseudoEmail = '$_pendingPhone@soilo.app';
-
       // 1. Sign in with Password (REAL LOGIN)
-      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: pseudoEmail,
-          password: pwd
+      authRepository.signInWithPhonePassword(_pendingPhone!, pwd);
+      final credential = PhoneAuthProvider.credential(
+          verificationId: verificationId,
+          smsCode: smsCode
       );
-
-      final user = userCredential.user;
-
-      // 2. Link Phone Credential
-      if (user != null) {
-        final credential = PhoneAuthProvider.credential(
-            verificationId: verificationId,
-            smsCode: smsCode
-        );
-        await user.updatePhoneNumber(credential);
-      }
+      await authRepository.updatePhoneCredential(credential);
 
       // Cleanup
       await ref.read(loginFlowPersistenceProvider.notifier).setPending(false);
