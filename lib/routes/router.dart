@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // Screen Imports
+import '../providers/app_startup_provider.dart';
 import '../providers/auth/signup_controller.dart';
 import '../providers/reset_flow_provider.dart';
 import '../screens/auth/login_screen.dart';
@@ -62,6 +63,7 @@ class RouterNotifier extends ChangeNotifier {
           (_, __) => notifyListeners(),
     );
     _ref.listen(shouldShowOnboardingProvider, (_, __) => notifyListeners());
+    _ref.listen(appStartupProvider, (_, __) => notifyListeners());
   }
 
   String? redirect(BuildContext context, GoRouterState state) {
@@ -71,13 +73,16 @@ class RouterNotifier extends ChangeNotifier {
     final shouldShowOnboarding = _ref.read(shouldShowOnboardingProvider);
     final isAuth = authState.asData?.value != null;
     final location = state.matchedLocation;
-
     // 1. PRIORITY: If flow is in progress, ALLOW EVERYTHING.
     if (isAuth && isResetPersisted) {
       // If they are already there, let them stay. If not, move them there.
       return location == '/reset-password' ? null : '/reset-password';
     }
     if (isFlowInProgress) return null;
+    final startupState = _ref.read(appStartupProvider);
+    if (startupState.isLoading || startupState.hasError) {
+      return null;
+    }
 
     // Define public routes
     final isLoginRoute = location == '/login';
