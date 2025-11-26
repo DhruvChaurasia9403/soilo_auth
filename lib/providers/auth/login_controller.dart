@@ -1,7 +1,9 @@
+import 'package:checking/providers/auth/signup_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/auth/auth_repository.dart';
+import '../../features/auth/user_role.dart';
 import '../../routes/router.dart';
 import '../login_flow_provider.dart';
 
@@ -127,6 +129,41 @@ class LoginController extends AsyncNotifier<String?> {
           smsCode: smsCode
       );
       await authRepository.updatePhoneCredential(credential);
+
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception("User not found after login");
+
+      final profileData = await authRepository.getUserProfile(user.uid);
+
+      // 3. Logic: Check if Onboarding is complete
+      // Default to 'false' if the field is missing
+      final bool isOnboardingComplete = profileData?['isOnboardingComplete'] ?? false;
+
+      if (!isOnboardingComplete && profileData != null) {
+        // ⚠️ User is logged in but hasn't finished onboarding.
+
+        // Extract data needed for the onboarding screen
+        final String fullName = profileData['fullName'] ?? '';
+        final String roleString = profileData['role'] ?? 'farmer';
+
+        // Convert string to Enum safely
+        final role = UserRole.values.firstWhere(
+              (e) => e.name == roleString,
+          orElse: () => UserRole.farmer,
+        );
+
+        // Populate the Data Provider so the Router can read it
+        ref.read(onboardingDataProvider.notifier).state = {
+          'fullName': fullName,
+          'role': role,
+        };
+
+        // Set the Flag to force redirection
+        ref.read(shouldShowOnboardingProvider.notifier).state = true;
+      } else {
+        // User is fully onboarded -> Ensure flag is false
+        ref.read(shouldShowOnboardingProvider.notifier).state = false;
+      }
 
       // Cleanup
       await ref.read(loginFlowPersistenceProvider.notifier).setPending(false);

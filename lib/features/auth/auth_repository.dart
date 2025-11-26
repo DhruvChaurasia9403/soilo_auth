@@ -72,12 +72,14 @@ class AuthRepository {
     required UserRole role,
   }) async {
     try {
+      final bool isFinished = (role != UserRole.farmer);
       await _firestore.collection('users').doc(uid).set({
         'uid': uid,
         'fullName': fullName,
         'phoneNumber': phoneNumber,
         'role': role.name,
         'createdAt': FieldValue.serverTimestamp(),
+        'isOnboardingComplete': isFinished, // 👈 KEY ADDITION
       });
     } catch (e) {
       throw Exception('Failed to create user profile: $e');
@@ -191,6 +193,14 @@ class AuthRepository {
       });
     } catch (e) {
       throw Exception('Failed to save farm details: $e');
+    }
+  }
+  Future<Map<String, dynamic>?> getUserProfile(String uid) async {
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      return doc.data();
+    } catch (e) {
+      throw Exception('Failed to fetch user profile: $e');
     }
   }
 
