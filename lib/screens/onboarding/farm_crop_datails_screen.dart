@@ -215,7 +215,7 @@ class _FarmCropDetailsPageState extends ConsumerState<FarmCropDetailsPage> {
                                 error: (e, s) => Text('Error loading crops: $e'),
                                 data: (cropOptions) {
                                   return DropdownButtonFormField<String>(
-                                    value: farm.cropType.isEmpty ? null : farm.cropType,
+                                    initialValue: farm.cropType.isEmpty ? null : farm.cropType,
                                     decoration: const InputDecoration(
                                       labelText: 'Select Crop',
                                       prefixIcon: Icon(Icons.grass_outlined),

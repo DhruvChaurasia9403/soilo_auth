@@ -1,7 +1,6 @@
 // lib/providers/app_startup_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../data/auth/auth_repository.dart';
 import '../models/auth/user_role.dart';
 import '../routes/router.dart';
@@ -44,6 +43,6 @@ final appStartupProvider = FutureProvider<void>((ref) async {
   } catch (e) {
     // If fetch fails (offline?), we might want to default to Home or Retry.
     // For now, logging error.
-    print("Startup Profile Fetch Failed: $e");
+    // print("Startup Profile Fetch Failed: $e");
   }
 });

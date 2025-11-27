@@ -16,7 +16,7 @@ class LoginFlowNotifier extends Notifier<bool> {
     state = prefs.getBool(key) ?? false;
   }
 
-  /// Call with true when starting 2FA, false when finished/cancelled
+  // Call with true when starting 2FA, false when finished/cancelled
   Future<void> setPending(bool isPending) async {
     final prefs = await SharedPreferences.getInstance();
     if (isPending) {

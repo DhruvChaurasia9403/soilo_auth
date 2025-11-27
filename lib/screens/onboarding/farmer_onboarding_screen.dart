@@ -219,7 +219,7 @@ class InfoPageState extends State<InfoPage> {
 
             // --- NEW: Language Dropdown ---
             DropdownButtonFormField<String>(
-              value: _selectedLanguage,
+              initialValue: _selectedLanguage,
               hint: const Text('Select Language'),
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.language),

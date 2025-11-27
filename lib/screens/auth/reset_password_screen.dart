@@ -21,9 +21,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  // State for visibility toggles
-  bool _obscureNewPassword = true;
-  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {

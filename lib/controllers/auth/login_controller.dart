@@ -136,11 +136,10 @@ class LoginController extends AsyncNotifier<String?> {
       final profileData = await authRepository.getUserProfile(user.uid);
 
       // 3. Logic: Check if Onboarding is complete
-      // Default to 'false' if the field is missing
       final bool isOnboardingComplete = profileData?['isOnboardingComplete'] ?? false;
 
       if (!isOnboardingComplete && profileData != null) {
-        // ⚠️ User is logged in but hasn't finished onboarding.
+        // User is logged in but hasn't finished onboarding.
 
         // Extract data needed for the onboarding screen
         final String fullName = profileData['fullName'] ?? '';

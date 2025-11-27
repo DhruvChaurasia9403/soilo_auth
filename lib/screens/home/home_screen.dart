@@ -40,7 +40,7 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text('Logged in as: ${user.email ?? user.phoneNumber ?? 'User'}'),
-                  if (user.uid != null) Text('User ID: ${user.uid}'),
+                  Text('User ID: ${user.uid}'),
                 ],
               );
             }

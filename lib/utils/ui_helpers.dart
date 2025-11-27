@@ -78,7 +78,7 @@ class StyledInfoCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: themeConfig.primaryColor.withOpacity(0.1),
+              color: themeConfig.primaryColor.withAlpha(25),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: themeConfig.primaryColor, size: isCompact ? 20 : 24),
@@ -130,13 +130,13 @@ class OnboardingProgressBar extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: isActive || isCompleted ? themeConfig.primaryColor : Colors.transparent,
                     border: Border.all(
-                        color: isActive || isCompleted ? themeConfig.primaryColor : Colors.grey.withOpacity(0.5), width: 1.5),
+                        color: isActive || isCompleted ? themeConfig.primaryColor : Colors.grey.withAlpha(126), width: 1.5),
                   ),
                   child: Center(
                     child: isCompleted
                         ? const Icon(Icons.check, size: 16, color: Colors.white)
                         : Text('${step.index + 1}', style: TextStyle(
-                        color: isActive ? Colors.white : Colors.grey.withOpacity(0.8),
+                        color: isActive ? Colors.white : Colors.grey.withAlpha(206),
                         fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
                 ),
@@ -144,7 +144,7 @@ class OnboardingProgressBar extends StatelessWidget {
                   Expanded(
                     child: Container(
                       height: 2, margin: const EdgeInsets.symmetric(horizontal: 4),
-                      color: isCompleted ? themeConfig.primaryColor.withOpacity(0.8) : Colors.grey.withOpacity(0.3),
+                      color: isCompleted ? themeConfig.primaryColor.withAlpha(206) : Colors.grey.withAlpha(126),
                     ),
                   ),
               ],
@@ -207,7 +207,7 @@ class PageHeader extends StatelessWidget {
         const SizedBox(height: 8),
         Text(title, style: theme.textTheme.headlineSmall?.copyWith(color: themeConfig.primaryColor, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        Text(subtitle, style: theme.textTheme.bodyMedium?.copyWith(color: themeConfig.textColor.withOpacity(0.8), height: 1.5)),
+        Text(subtitle, style: theme.textTheme.bodyMedium?.copyWith(color: themeConfig.textColor.withAlpha(206), height: 1.5)),
       ],
     );
   }

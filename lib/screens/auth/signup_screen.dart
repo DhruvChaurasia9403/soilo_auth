@@ -105,7 +105,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
                         // Role Dropdown
                         DropdownButtonFormField<UserRole>(
-                          value: _selectedRole,
+                          initialValue: _selectedRole,
                           hint: const Text('Select Your Role'),
                           decoration: const InputDecoration(
                             prefixIcon: Icon(Icons.work_outline),

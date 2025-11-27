@@ -25,7 +25,7 @@ class AppThemes {
   static const Color _darkBg = Color(0xFF121212); // Original Dark Grey
   static const Color _darkText = Color(0xFFE0E0E0); // Original Off-White text
 
-  static final Color _darkInputFill = Colors.grey.shade800.withOpacity(0.5);
+  static final Color _darkInputFill = Colors.grey.shade800.withAlpha(150);
 
 
   // ----------------------------------------------------------------
@@ -54,7 +54,7 @@ class AppThemes {
       progressColor: _lightAccent,
       snackBarBg: _lightPrimary,
 
-      gradientStart: _lightPrimary.withOpacity(0.08),
+      gradientStart: _lightPrimary.withAlpha(20),
       gradientEnd: _lightBg,
     ),
   ).createTheme();
@@ -85,7 +85,7 @@ class AppThemes {
       progressColor: _darkPrimaryLight,
       snackBarBg: const Color(0xFF1E1E1E),
 
-      gradientStart: _darkPrimaryLight.withOpacity(0.2),
+      gradientStart: _darkPrimaryLight.withAlpha(51),
       gradientEnd: _darkBg,
     ),
   ).createTheme();

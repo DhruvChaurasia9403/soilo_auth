@@ -21,7 +21,7 @@ class SignUpController extends AsyncNotifier<String?> {
     return null; // initial: no verificationId
   }
 
-  /// Step 1: send OTP and save pending data (do NOT create Firebase user here)
+  // Step 1: send OTP and save pending data (do NOT create Firebase user here)
   Future<void> signUpAndVerifyPhone({
     required String fullName,
     required String password,
@@ -44,7 +44,7 @@ class SignUpController extends AsyncNotifier<String?> {
     );
   }
 
-  /// NEW: Resend OTP using stored pending phone number
+  // NEW: Resend OTP using stored pending phone number
   Future<void> resendOtp({
     required Function(String verificationId) onCodeSent,
     required Function(String error) onError,
@@ -65,7 +65,7 @@ class SignUpController extends AsyncNotifier<String?> {
     );
   }
 
-  /// PRIVATE HELPER: Handles the actual Firebase verification logic
+  // PRIVATE HELPER: Handles the actual Firebase verification logic
   Future<void> _startPhoneVerification({
     required String phoneNumber,
     required Function(String verificationId) onCodeSent,
@@ -97,7 +97,7 @@ class SignUpController extends AsyncNotifier<String?> {
       state = AsyncValue.error(e, StackTrace.current);
     }
   }
-  /// Step 2: after OTP entered — create Firebase user and link phone credential
+  // Step 2: after OTP entered — create Firebase user and link phone credential
   Future<void> completeSignUpWithOtp(String verificationId, String smsCode) async {
     state = const AsyncValue.loading(); //
     final authRepository = ref.read(authRepositoryProvider); //

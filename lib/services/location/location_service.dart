@@ -28,12 +28,13 @@ class LocationService {
       );
     }
 
-    // When permissions are granted, get the position.
     final position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-      // Use a brief timeout to speed up acquisition
-      timeLimit: const Duration(seconds: 10),
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 10),
+      ),
     );
+
 
     return 'Lat: ${position.latitude.toStringAsFixed(6)}, Lng: ${position.longitude.toStringAsFixed(6)}';
   }

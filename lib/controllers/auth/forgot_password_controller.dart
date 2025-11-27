@@ -1,11 +1,9 @@
 // lib/features/auth/forgot_password_controller.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/auth/auth_repository.dart';
 import '../../providers/flow_flags/reset_flow_provider.dart';
 
-// This controller will hold the verificationId
 class ForgotPasswordController extends AsyncNotifier<String?> {
   @override
   String? build() {
@@ -36,11 +34,9 @@ class ForgotPasswordController extends AsyncNotifier<String?> {
         },
         codeAutoRetrievalTimeout: (verificationId) {
           state = AsyncValue.data(verificationId);
-          // Keep verification ID
-          // onCodeSent(verificationId);
-          print("Timer timed out");
+          // print("Timer timed out");
           if (onAutoRetrievalTimeout != null) {
-            print("Timer Method called");
+            // print("Timer Method called");
             onAutoRetrievalTimeout(verificationId);
           }
         },
@@ -71,7 +67,6 @@ class ForgotPasswordController extends AsyncNotifier<String?> {
   }
 }
 
-// Must not be .autoDispose so verificationId persists during OTP flow
 final forgotPasswordControllerProvider =
 AsyncNotifierProvider<ForgotPasswordController, String?>(() {
   return ForgotPasswordController();

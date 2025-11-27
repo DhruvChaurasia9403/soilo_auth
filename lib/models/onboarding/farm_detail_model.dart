@@ -32,14 +32,13 @@ class FarmDetailModel {
     );
   }
 }
-
-// --- Combined Farm/Crop Entry (Repeatable Unit) ---
+// --- Farm Entry Model ---
 class FarmEntry {
   // Farm Details
   double? farmSizeHectares;
   String? farmLocation; // GPS string or name
 
-  // Crop Details (Simplified for one primary crop per farm for the form)
+  // Crop Details
   String cropType;
   DateTime dateSown; // Use DateTime for Flutter logic
 

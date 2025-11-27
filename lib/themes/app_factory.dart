@@ -234,7 +234,7 @@ class ThemeFactory {
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 32),
           foregroundColor: config.primaryColor,
-          side: BorderSide(color: config.primaryColor.withOpacity(0.2), width: 1),
+          side: BorderSide(color: config.primaryColor.withAlpha(51), width: 1),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),

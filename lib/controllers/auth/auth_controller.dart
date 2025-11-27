@@ -9,7 +9,6 @@ final userProvider = StreamProvider<User?>((ref) {
 });
 
 // A notifier to handle general auth operations like sign out.
-// Renamed from AutoDisposeAsyncNotifier to AsyncNotifier
 class AuthController extends AsyncNotifier<void> {
   @override
   Future<void> build() async {
@@ -23,7 +22,6 @@ class AuthController extends AsyncNotifier<void> {
   }
 }
 
-// Renamed from AutoDisposeAsyncNotifierProvider to AsyncNotifierProvider.autoDispose
 final authControllerProvider = AsyncNotifierProvider.autoDispose<AuthController, void>(() {
   return AuthController();
 });

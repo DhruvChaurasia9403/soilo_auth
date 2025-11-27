@@ -1,4 +1,3 @@
-import 'package:checking/screens/auth/signup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -8,7 +7,6 @@ import '../../utils/components/phone_input_field.dart';
 import '../../utils/components/primary_button.dart';
 import '../../controllers/auth/login_controller.dart';
 import '../../themes/app_factory.dart';
-import 'package:flutter/services.dart';
 import '../../utils/ui_helpers.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {

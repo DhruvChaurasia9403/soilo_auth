@@ -86,7 +86,7 @@ class AuthRepository {
     }
   }
 
-  // --- ⭐ START: MISSING METHODS (RE-ADDED) ---
+  // ---  START: MISSING METHODS (RE-ADDED) ---
 
   // --- Phone OTP Verification ---
   // This method will initiate the phone verification process.
@@ -122,7 +122,7 @@ class AuthRepository {
     }
   }
 
-  // --- ⭐ END: MISSING METHODS (RE-ADDED) ---
+  // --- END: MISSING METHODS (RE-ADDED) ---
 
 
   // --- Password Reset ---
@@ -170,7 +170,7 @@ class AuthRepository {
   Future<void> updateFarmerProfile({
     required String uid,
     required String language,
-    required List<FarmEntry> farmEntries, // Assuming FarmEntry model is accessible
+    required List<FarmEntry> farmEntries,
   }) async {
     try {
       final batch = _firestore.batch();

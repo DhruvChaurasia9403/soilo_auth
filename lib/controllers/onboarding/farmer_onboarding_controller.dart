@@ -96,6 +96,16 @@ AsyncNotifierProvider<FarmerOnboardingController, FarmDetailModel>(() {
   return FarmerOnboardingController();
 });
 
+
+// --- Crop Options Provider ---
+/*
+final cropOptionsProvider = FutureProvider.autoDispose<List<String>>((ref) async {
+  final apiService = ref.read(soiloApiServiceProvider);
+  return apiService.fetchCropOptions();
+});
+*/
+
+
 // Provides the list of crops from the API (Memoized)
 final cropOptionsProvider = FutureProvider.autoDispose<List<String>>((ref) async {
   // Using hardcoded list for now as per the user's current setup in the previous file.

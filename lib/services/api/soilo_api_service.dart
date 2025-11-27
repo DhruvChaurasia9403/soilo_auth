@@ -1,8 +1,8 @@
 // lib/services/api/soilo_api_service.dart
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
 import '../../utils/constants.dart';
+import 'package:http/http.dart' as http;
 
 class SoiloApiService {
   final String baseUrl = kSoiloApiBaseUrl;
