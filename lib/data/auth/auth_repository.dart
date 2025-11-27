@@ -196,7 +196,7 @@ class AuthRepository {
 
       batch.update(userRef, {
         'farmEntries': farmDataList,
-        'onboarding_complete': true, // Mark onboarding complete
+        'isOnboardingComplete': true, // Mark onboarding complete
       });
 
       await batch.commit();

@@ -22,6 +22,7 @@ class _FarmCropDetailsPageState extends ConsumerState<FarmCropDetailsPage> {
   final _formKey = GlobalKey<FormState>();
   // List of mutable FarmEntry objects managed locally
   List<FarmEntry> _farmEntries = [];
+  final List<TextEditingController> _locationControllers = [];
   bool _isSaving = false;
 
   @override
@@ -36,9 +37,20 @@ class _FarmCropDetailsPageState extends ConsumerState<FarmCropDetailsPage> {
         cropType: e.cropType,
         dateSown: e.dateSown,
       )).toList();
+      for (var farm in _farmEntries) {
+        _locationControllers.add(TextEditingController(text: farm.farmLocation));
+      }
     } else {
       _addFarmEntry();
     }
+  }
+  @override
+  void dispose() {
+    // 3. Always dispose controllers
+    for (var controller in _locationControllers) {
+      controller.dispose();
+    }
+    super.dispose();
   }
 
   void _addFarmEntry() {
@@ -48,12 +60,15 @@ class _FarmCropDetailsPageState extends ConsumerState<FarmCropDetailsPage> {
         cropType: '',
         dateSown: DateTime.now(),
       ));
+      _locationControllers.add(TextEditingController());
     });
   }
 
   void _removeFarmEntry(int index) {
     setState(() {
       _farmEntries.removeAt(index);
+      _locationControllers[index].dispose();
+      _locationControllers.removeAt(index);
       if (_farmEntries.isEmpty) {
         _addFarmEntry(); // Always ensure at least one farm entry exists
       }
@@ -76,6 +91,8 @@ class _FarmCropDetailsPageState extends ConsumerState<FarmCropDetailsPage> {
       _isSaving = false;
       if (!locationString.startsWith("Error:")) {
         _farmEntries[index].farmLocation = locationString;
+        // 7. Update the CONTROLLER (This updates the UI immediately)
+        _locationControllers[index].text = locationString;
       }
     });
   }
@@ -189,7 +206,7 @@ class _FarmCropDetailsPageState extends ConsumerState<FarmCropDetailsPage> {
 
                               // 2. Location Field
                               TextFormField(
-                                initialValue: farm.farmLocation,
+                                controller: _locationControllers[index],
                                 readOnly: isLocationFetching || _isSaving, // Disable input if anything is loading
                                 decoration: InputDecoration(
                                   labelText: 'Farm Location (GPS/Name)',
