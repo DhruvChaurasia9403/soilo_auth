@@ -2,25 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import '../../providers/auth/signup_controller.dart';
-import '../../providers/auth/login_controller.dart';
-import '../../providers/auth/forgot_password_controller.dart';
+import '../../controllers/auth/signup_controller.dart';
+import '../../controllers/auth/login_controller.dart';
+import '../../controllers/auth/forgot_password_controller.dart';
 import '../../themes/app_factory.dart';
-import 'signup_screen.dart' show VerificationPurpose;
-import '../../features/auth/user_role.dart'; // Import UserRole for redirection logic
+import '../../utils/phone_helpers.dart';
+import '../../utils/ui_helpers.dart';
+import '../../models/auth/user_role.dart';
 
 class OtpVerificationScreen extends ConsumerStatefulWidget {
   final String verificationId;
   final String phoneNumber;
   final VerificationPurpose purpose;
-  final String? password; // 👈 Added password field
+  final String? password;
 
   const OtpVerificationScreen({
     super.key,
     required this.verificationId,
     required this.phoneNumber,
     required this.purpose,
-    this.password, // 👈 Accept it in constructor
+    this.password,
   });
 
   @override
@@ -72,7 +73,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           break;
 
         case VerificationPurpose.login:
-        // 👈 USE THE PASSWORD HERE FOR FINAL LOGIN
+        //  USE THE PASSWORD HERE FOR FINAL LOGIN
           if (widget.password != null) {
             ref
                 .read(loginControllerProvider.notifier)
@@ -111,16 +112,16 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       setState(() => _currentVerificationId = newVerId);
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Code resent successfully!')));
-      // _startCountdown(); // 👈 Start timer ONLY after success
+      // _startCountdown(); //  Start timer ONLY after success
     }
-    // 👇 New Handler for Timeout
+    //  New Handler for Timeout
     void handleTimeout(String newVerId) {
       if (!mounted) return;
       setState(() => _currentVerificationId = newVerId);
       // Show a different message so user knows what happened
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Auto-retrieval timed out. Please enter code manually.')));
-      // ✅ Re-enable timer/button so they aren't stuck
+      // Re-enable timer/button so they aren't stuck
       // _startCountdown();
     }
 
@@ -129,7 +130,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Resend failed: $err')));
-      // _startCountdown(); // 👈 Start timer even on error so user can try again later
+      // _startCountdown(); //  Start timer even on error so user can try again later
     }
 
     try {
@@ -181,11 +182,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     }
   }
 
-  String _maskedPhone(String phone) {
-    if (phone.length < 6) return phone;
-    final last = phone.length >= 4 ? phone.substring(phone.length - 4) : phone;
-    return '...$last';
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -273,7 +270,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Enter the code sent to number ending in \n${_maskedPhone(widget.phoneNumber)}',
+                  'Enter the code sent to number ending in \n${maskedPhone(widget.phoneNumber)}',
                   style: theme.textTheme.titleMedium,
                   textAlign: TextAlign.center,
                 ),

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_animate/flutter_animate.dart'; // Required for animations
-import '../../features/auth/utils/validators.dart';
-import '../../features/common/password_input_field.dart';
-import '../../features/common/primary_button.dart';
-import '../../providers/auth/reset_password_controller.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../../utils/components/password_input_field.dart';
+import '../../utils/components/primary_button.dart';
+import '../../controllers/auth/reset_password_controller.dart';
 import '../../themes/app_factory.dart';
+import '../../utils/ui_helpers.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -32,21 +32,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     super.dispose();
   }
 
-  void _showPasswordRules() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Password Rules'),
-        content: Text(AppValidators.passwordRules),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,11 +53,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           } else {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
           }
-          // 🛑 RETURN HERE so we don't fall through to success logic
           return;
         }
         // 3. HANDLE SUCCESS (Only if no error)
-        // We use 'valueOrNull' check to ensure we actually completed the action
         if (!state.hasError && state.hasValue) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text('Password reset successfully. Please log in.')));
@@ -144,7 +127,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton.icon(
-                            onPressed: _showPasswordRules,
+                            onPressed:()=> showPasswordRules(context),
                             icon: const Icon(Icons.info_outline, size: 16),
                             label: const Text('Password Rules'),
                             style: TextButton.styleFrom(

@@ -3,8 +3,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../features/auth/auth_repository.dart';
-import '../reset_flow_provider.dart';
+import '../../data/auth/auth_repository.dart';
+import '../../providers/flow_flags/reset_flow_provider.dart';
 
 class ResetPasswordController extends AsyncNotifier<void> {
   @override

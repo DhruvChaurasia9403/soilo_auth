@@ -15,11 +15,4 @@ class AppValidators {
     }
     return null;
   }
-
-  static String get passwordRules =>
-      'Password must be at least 8 characters long and contain at least one of each:\n'
-          '• An uppercase letter (A-Z)\n'
-          '• A lowercase letter (a-z)\n'
-          '• A number (0-9)\n'
-          '• A special character (e.g., !, @, #, \$)';
 }

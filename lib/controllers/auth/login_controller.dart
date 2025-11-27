@@ -1,11 +1,11 @@
-import 'package:checking/providers/auth/signup_controller.dart';
+import 'package:checking/controllers/auth/signup_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../features/auth/auth_repository.dart';
-import '../../features/auth/user_role.dart';
+import '../../data/auth/auth_repository.dart';
+import '../../models/auth/user_role.dart';
 import '../../routes/router.dart';
-import '../login_flow_provider.dart';
+import '../../providers/flow_flags/login_flow_provider.dart';
 
 class LoginController extends AsyncNotifier<String?> {
   String? _pendingPhone;

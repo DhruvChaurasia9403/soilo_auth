@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/common/password_input_field.dart';
-import '../../features/common/phone_input_field.dart';
-import '../../features/common/primary_button.dart';
-import '../../providers/auth/signup_controller.dart';
-import '../../features/auth/user_role.dart';
+import '../../utils/components/password_input_field.dart';
+import '../../utils/components/phone_input_field.dart';
+import '../../utils/components/primary_button.dart';
+import '../../controllers/auth/signup_controller.dart';
+import '../../models/auth/user_role.dart';
 import '../../themes/app_factory.dart';
+import '../../utils/ui_helpers.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
@@ -25,9 +26,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final TextEditingController _phoneController = TextEditingController();
   UserRole? _selectedRole;
 
-  // 1. State for toggles
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -222,8 +220,3 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   }
 }
 
-enum VerificationPurpose {
-  signUp,
-  login,
-  passwordReset,
-}

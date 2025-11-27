@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../onboarding/data/models/farm_detail_model.dart';
-import 'user_role.dart';
+import '../../models/onboarding/farm_detail_model.dart';
+import '../../models/auth/user_role.dart';
 
 // --- Provider ---
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -169,30 +169,40 @@ class AuthRepository {
 
   Future<void> updateFarmerProfile({
     required String uid,
-    required double farmSize,
-    required String farmLocation,
-    required List<CropEntry> crops,
+    required String language,
+    required List<FarmEntry> farmEntries, // Assuming FarmEntry model is accessible
   }) async {
     try {
-      // 1. Convert List<CropEntry> to List<Map> for Firestore
-      final List<Map<String, dynamic>> cropData = crops.map((crop) {
-        return {
-          'cropType': crop.cropType,
-          // Store date as Firestore Timestamp or ISO String
-          'dateSown': Timestamp.fromDate(crop.dateSown),
-        };
+      final batch = _firestore.batch();
+      final userRef = _firestore.collection('users').doc(uid);
+
+      // 1. Update primary user document (language)
+      batch.update(userRef, {
+        'language': language,
+      });
+
+      // 2. Clear old farm data (optional, but safer for a rewrite operation)
+      // Note: Full complex data update often requires subcollections or separate document structure.
+      // For simplicity, we just save the structured list here.
+      // In a real app, you might iterate and save to a 'farms' subcollection.
+      final farmDataList = farmEntries.map((entry) => {
+        'farmSizeHectares': entry.farmSizeHectares,
+        'farmLocation': entry.farmLocation,
+        'cropType': entry.cropType,
+        'dateSown': entry.dateSown, // Storing DateTime object
+        'dateSownTimestamp': Timestamp.fromDate(entry.dateSown), // More Firestore-friendly
+        // Other fields...
       }).toList();
 
-      // 2. Update the user document
-      await _firestore.collection('users').doc(uid).update({
-        'farmSizeHectares': farmSize,
-        'farmLocation': farmLocation,
-        'crops': cropData, // Save the array
-        'isOnboardingComplete': true, // Mark finished
-        'updatedAt': FieldValue.serverTimestamp(),
+      batch.update(userRef, {
+        'farmEntries': farmDataList,
+        'onboarding_complete': true, // Mark onboarding complete
       });
+
+      await batch.commit();
+
     } catch (e) {
-      throw Exception('Failed to save farm details: $e');
+      throw Exception('Failed to update farmer profile details: $e');
     }
   }
   Future<Map<String, dynamic>?> getUserProfile(String uid) async {

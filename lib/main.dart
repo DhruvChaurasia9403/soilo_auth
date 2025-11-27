@@ -1,5 +1,5 @@
-import 'package:checking/providers/login_flow_provider.dart';
-import 'package:checking/providers/reset_flow_provider.dart';
+import 'package:checking/providers/flow_flags/login_flow_provider.dart';
+import 'package:checking/providers/flow_flags/reset_flow_provider.dart';
 import 'package:checking/routes/router.dart';
 import 'package:checking/themes/app_themes.dart';
 import 'package:firebase_auth/firebase_auth.dart';

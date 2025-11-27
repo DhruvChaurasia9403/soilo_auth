@@ -6,18 +6,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 // Screen Imports
 import '../providers/app_startup_provider.dart';
-import '../providers/auth/signup_controller.dart';
-import '../providers/reset_flow_provider.dart';
+import '../controllers/auth/signup_controller.dart';
+import '../providers/flow_flags/reset_flow_provider.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/signup_screen.dart';
 import '../screens/auth/otp_verification_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
 import '../screens/auth/reset_password_screen.dart';
 import '../screens/home/home_screen.dart';
-import '../screens/auth/signup_screen.dart' show VerificationPurpose;
-// Production Imports for Farmer Onboarding
-import '../features/onboarding/farmer_onboarding_screen.dart';
-import '../features/auth/user_role.dart';
+import '../screens/onboarding/farmer_onboarding_screen.dart';
+import '../models/auth/user_role.dart';
+import '../utils/ui_helpers.dart';
 
 
 // --- 1. Auth State Provider ---

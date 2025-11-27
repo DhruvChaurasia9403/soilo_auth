@@ -2,10 +2,10 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../features/auth/auth_repository.dart';
-import '../features/auth/user_role.dart';
+import '../data/auth/auth_repository.dart';
+import '../models/auth/user_role.dart';
 import '../routes/router.dart';
-import 'auth/signup_controller.dart'; // For shouldShowOnboardingProvider
+import '../controllers/auth/signup_controller.dart'; // For shouldShowOnboardingProvider
 
 // This provider handles the logic to check profile status on App Start
 final appStartupProvider = FutureProvider<void>((ref) async {

@@ -1,12 +1,13 @@
 import 'package:checking/screens/auth/signup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart'; // Required for animations
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/common/phone_input_field.dart';
-import '../../features/common/primary_button.dart';
-import '../../providers/auth/forgot_password_controller.dart';
-import '../../themes/app_factory.dart'; // For ThemeConfig
+import '../../utils/components/phone_input_field.dart';
+import '../../utils/components/primary_button.dart';
+import '../../controllers/auth/forgot_password_controller.dart';
+import '../../themes/app_factory.dart';
+import '../../utils/ui_helpers.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});

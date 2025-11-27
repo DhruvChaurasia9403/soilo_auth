@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/common/password_input_field.dart';
-import '../../features/common/phone_input_field.dart';
-import '../../features/common/primary_button.dart';
-import '../../providers/auth/login_controller.dart';
+import '../../utils/components/password_input_field.dart';
+import '../../utils/components/phone_input_field.dart';
+import '../../utils/components/primary_button.dart';
+import '../../controllers/auth/login_controller.dart';
 import '../../themes/app_factory.dart';
 import 'package:flutter/services.dart';
+import '../../utils/ui_helpers.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -21,7 +22,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -135,7 +135,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           'verificationId': verificationId,
                           'phoneNumber': _phoneController.text.trim(),
                           'purpose': VerificationPurpose.login,
-                          // 👇 PASS PASSWORD TO OTP SCREEN
                           'password': _passwordController.text.trim(),
                         },
                       );
